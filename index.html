@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#181b22">
+<title>Мессенджер</title>
+<style>
+  :root{--bg:#0f1115;--panel:#181b22;--line:#262a33;--text:#e8eaf0;--muted:#8b91a0;--accent:#4c8dff;--mine:#2b5fd9;--theirs:#232733}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,sans-serif}
+  #app{height:100dvh;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header b{flex:1;font-size:18px}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 16px;background:var(--accent);color:#fff;cursor:pointer}
+  button:disabled{opacity:.6}
+  button.icon{background:none;padding:4px 8px;font-size:22px;color:var(--text)}
+  button.ghost{background:none;color:var(--muted);padding:6px 8px}
+  input{font:inherit;width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+  .auth{padding:24px 16px;display:flex;flex-direction:column;gap:12px;margin:auto 0}
+  .auth h1{margin:0 0 8px}
+  .err{color:#ff6b6b;min-height:1.4em;margin:0}
+  .muted{color:var(--muted);padding:16px;margin:0}
+  .list{flex:1;overflow:auto}
+  .row{display:flex;align-items:center;gap:12px;width:100%;background:none;border-radius:0;border-bottom:1px solid var(--line);padding:14px 16px;text-align:left;color:var(--text)}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:600;flex:none}
+  .msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .msg{max-width:80%;padding:8px 12px;border-radius:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+  .msg small{display:block;font-size:11px;opacity:.6;text-align:right;margin-top:2px}
+  .mine{align-self:flex-end;background:var(--mine);border-bottom-right-radius:4px}
+  .theirs{align-self:flex-start;background:var(--theirs);border-bottom-left-radius:4px}
+  .composer{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== НАСТРОЙКИ: вставь свои значения из Supabase (Project Settings -> API) ======
+const SUPABASE_URL = "https://tksunhdivinioytzvahq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y3R08qTEV94Mh4L1M8T01A_7bo6fhPs";
+// ====================================================================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app");
+let me = null;
+let channel = null;
+
+// --- маленькие помощники ---
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else if (k === "class") node.className = v;
+    else node.setAttribute(k, v);
+  }
+  node.append(...children);
+  return node;
+}
+function show(...nodes) { app.replaceChildren(...nodes); }
+function closeChannel() {
+  if (channel) { sb.removeChannel(channel); channel = null; }
+}
+
+// --- экран входа / регистрации ---
+function authView() {
+  closeChannel();
+  let signup = false;
+  const err = el("p", { class: "err" });
+  const name = el("input", { placeholder: "Ник", autocomplete: "nickname" });
+  const email = el("input", { type: "email", placeholder: "Email", autocomplete: "email" });
+  const pass = el("input", { type: "password", placeholder: "Пароль (от 6 символов)", autocomplete: "current-password" });
+  const btn = el("button", {});
+  const toggle = el("button", { class: "ghost", type: "button" });
+
+  function render() {
+    name.style.display = signup ? "" : "none";
+    btn.textContent = signup ? "Зарегистрироваться" : "Войти";
+    toggle.textContent = signup ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Регистрация";
+    err.textContent = "";
+  }
+  toggle.addEventListener("click", () => { signup = !signup; render(); });
+
+  btn.addEventListener("click", async () => {
+    err.textContent = "";
+    btn.disabled = true;
+    try {
+      if (signup) {
+        const username = name.value.trim();
+        if (username.length < 2) throw new Error("Ник должен быть от 2 символов");
+        const { data, error } = await sb.auth.signUp({
+          email: email.value.trim(),
+          password: pass.value,
+          options: { data: { username } },
+        });
+        if (error) throw error;
+        if (!data.session) throw new Error("Подтверди email по письму, затем войди.");
+      } else {
+        const { error } = await sb.auth.signInWithPassword({
+          email: email.value.trim(),
+          password: pass.value,
+        });
+        if (error) throw error;
+      }
+      // дальше экран переключится сам (onAuthStateChange)
+    } catch (e) {
+      err.textContent = e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  show(el("div", { class: "auth" }, el("h1", {}, "Мессенджер"), name, email, pass, err, btn, toggle));
+  render();
+}
+
+// --- список людей ---
+async function listView() {
+  closeChannel();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  const logout = el("button", { class: "ghost", onclick: () => sb.auth.signOut() }, "Выйти");
+  show(el("header", {}, el("b", {}, "Люди"), logout), list);
+
+  const { data, error } = await sb.from("profiles").select("id, username").neq("id", me.id).order("username");
+  if (error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+  if (!data.length) {
+    list.replaceChildren(el("p", { class: "muted" }, "Пока никого нет. Пригласи друзей зарегистрироваться."));
+    return;
+  }
+  list.replaceChildren(...data.map((u) =>
+    el("button", { class: "row", onclick: () => chatView(u) },
+      el("div", { class: "avatar" }, u.username.slice(0, 1).toUpperCase()),
+      el("span", {}, u.username))
+  ));
+}
+
+// --- личный чат ---
+async function chatView(peer) {
+  closeChannel();
+  const box = el("div", { class: "msgs" });
+  const input = el("input", { placeholder: "Сообщение", autocomplete: "off" });
+  const form = el("form", { class: "composer" }, input, el("button", { type: "submit" }, "➤"));
+  show(el("header", {}, el("button", { class: "icon", onclick: listView }, "←"), el("b", {}, peer.username)), box, form);
+
+  const seen = new Set();
+  function add(m) {
+    if (seen.has(m.id)) return;
+    seen.add(m.id);
+    const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    box.append(el("div", { class: "msg " + (m.sender_id === me.id ? "mine" : "theirs") },
+      el("span", {}, m.body), el("small", {}, time)));
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // история (последние 200)
+  const { data, error } = await sb.from("messages").select("*")
+    .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
+    .order("created_at", { ascending: false }).limit(200);
+  if (error) { box.append(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+  data.reverse().forEach(add);
+
+  // новые сообщения в реальном времени (Supabase сам отдаёт только те, что тебе разрешены)
+  channel = sb.channel("chat-" + me.id + "-" + peer.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (p) => {
+      const m = p.new;
+      const ok = (m.sender_id === peer.id && m.recipient_id === me.id) ||
+                 (m.sender_id === me.id && m.recipient_id === peer.id);
+      if (ok) add(m);
+    })
+    .subscribe();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    const { data: row, error: err } = await sb.from("messages")
+      .insert({ recipient_id: peer.id, body: text }).select().single();
+    if (err) { input.value = text; alert("Не отправилось: " + err.message); }
+    else add(row);
+  });
+  input.focus();
+}
+
+// --- запуск: показываем нужный экран по состоянию входа ---
+let currentUid;
+sb.auth.onAuthStateChange((_event, session) => {
+  const uid = session?.user?.id ?? null;
+  if (uid === currentUid) return; // обновление токена не должно сбрасывать экран
+  currentUid = uid;
+  me = session?.user ?? null;
+  uid ? listView() : authView();
+});
+</script>
+</body>
+</html>
