@@ -1,6 +1,6 @@
 {
-  "name": "SmartGram",
-  "short_name": "SmartGram",
+  "smartgram": "SmartGram",
+  "smartgram": "SmartGram",
   "description": "Личный мессенджер для друзей",
   "lang": "ru",
   "start_url": "./",
