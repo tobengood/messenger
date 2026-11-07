@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#181b22">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Мессенджер</title>
+<style>
+  :root{--bg:#0f1115;--panel:#181b22;--line:#262a33;--text:#e8eaf0;--muted:#8b91a0;--accent:#4c8dff;--mine:#2b5fd9;--theirs:#232733}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,sans-serif}
+  #app{height:100dvh;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header b{flex:1;font-size:18px}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 16px;background:var(--accent);color:#fff;cursor:pointer}
+  button:disabled{opacity:.6}
+  button.icon{background:none;padding:4px 8px;font-size:22px;color:var(--text)}
+  button.ghost{background:none;color:var(--muted);padding:6px 8px}
+  button.danger{background:none;color:#ff6b6b}
+  input,textarea{font:inherit;width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+  textarea{resize:vertical}
+  .auth{padding:24px 16px;display:flex;flex-direction:column;gap:12px;margin:auto 0}
+  .auth h1{margin:0 0 8px}
+  .err{color:#ff6b6b;min-height:1.4em;margin:0}
+  .muted{color:var(--muted);padding:16px;margin:0}
+  .tabbar{display:flex;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border-radius:12px;padding:6px 0;color:var(--muted);font-size:12px}
+  .tab .ti{font-size:22px;line-height:26px;height:26px;display:flex;align-items:center}
+  .tab .avatar{width:26px;height:26px;font-size:12px}
+  .tab.on{color:var(--accent)}
+  header.bare{background:none;border-bottom:0;position:absolute;left:0;top:0;z-index:2}
+  #app{position:relative}
+  .pscroll{flex:1;overflow:auto;padding-bottom:16px}
+  .pscroll .center{display:flex;justify-content:center;padding:8px 0}
+  .hero{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 16px 8px;background:linear-gradient(180deg,#1c2a4d 0%,transparent 100%)}
+  .hero .avatar{box-shadow:0 0 0 4px rgba(76,141,255,.25)}
+  .hero h2{margin:10px 0 0;font-size:24px;overflow-wrap:anywhere;text-align:center}
+  .hero .sub{color:var(--muted);font-size:14px}
+  .actions{display:flex;gap:10px;padding:12px 16px 4px}
+  .act{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel);color:var(--text);border-radius:16px;padding:12px 4px;font-size:13px}
+  .act .ai{font-size:22px;line-height:26px}
+  .island{background:var(--panel);border-radius:18px;margin:12px 16px 0;padding:2px 16px}
+  .island.pad{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .irow{display:block;width:100%;text-align:left;background:none;border-radius:0;color:var(--text);padding:12px 0;border-bottom:1px solid var(--line)}
+  .irow:last-child{border-bottom:0}
+  .irow .iv{font-size:16px;overflow-wrap:anywhere;white-space:pre-wrap}
+  .irow .il{color:var(--muted);font-size:13px;margin-top:2px}
+  .pill{display:inline-block;margin:12px 0 6px;padding:6px 14px;border-radius:999px;background:rgba(76,141,255,.18);color:var(--accent);font-weight:600;font-size:14px}
+  .island.gifts{padding-bottom:12px}
+  .island.gifts .muted{padding:8px 0}
+  .ptabs{display:flex;gap:4px;margin:16px 16px 0;padding:5px;background:var(--panel);border-radius:999px;overflow-x:auto;scrollbar-width:none}
+  .ptabs::-webkit-scrollbar{display:none}
+  .ptab{flex:none;background:none;color:var(--muted);border-radius:999px;padding:8px 16px;font-weight:600;font-size:15px}
+  .ptab.on{background:rgba(76,141,255,.2);color:var(--accent)}
+  .pbody{padding:12px 16px 0}
+  .stubmini{text-align:center;color:var(--muted);padding:36px 0}
+  .stubmini b{display:block;font-size:18px;color:var(--text);margin-bottom:4px}
+  .chips{display:flex;gap:8px;margin-bottom:12px}
+  .chip{padding:8px 16px;border-radius:999px;background:var(--panel);font-weight:600}
+  .ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .gcard{position:relative;aspect-ratio:1;background:var(--panel);border-radius:18px;padding:0;display:grid;place-items:center;color:var(--text)}
+  .gcard.dim .gbig{opacity:.35}
+  .gbig{font-size:68px;line-height:1}
+  .gsender{position:absolute;left:8px;top:8px}
+  .gcard .gsender .avatar.sm{width:24px;height:24px;font-size:11px}
+  .ghid{position:absolute;bottom:8px;font-size:12px;color:var(--muted)}
+  .hint{color:var(--muted);text-align:center;font-size:14px;margin:16px 8px 0}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+  .sheet{width:100%;max-width:640px;background:#202228;border-radius:24px 24px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));text-align:center;max-height:92dvh;overflow:auto}
+  .sheetemoji{font-size:128px;line-height:1.1;margin-top:8px}
+  .sheet h2{margin:8px 0 4px;font-size:24px}
+  .sheetsub{color:var(--text);margin:0 0 16px}
+  .gtable{border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left}
+  .gtable>div{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .gtable>div:last-child{border-bottom:0}
+  .gtable>div>span{flex:none;width:34%;padding:14px 12px;font-weight:700;background:rgba(255,255,255,.04);align-self:stretch;display:flex;align-items:center}
+  .gtable>div>div{padding:10px 12px;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .gtable .from{flex-wrap:wrap}
+  .gtable .from .avatar.sm{width:28px;height:28px;font-size:13px}
+  .gtable .from b{max-width:100%;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tagbtn{background:rgba(76,141,255,.2);color:var(--accent);border-radius:999px;padding:4px 10px;font-size:13px;flex:none}
+  .sheetnote{color:var(--muted);font-size:14px;margin:14px 0}
+  .linkbtn{background:none;color:var(--accent);padding:0;font-size:14px}
+  .sendg{width:auto;padding:14px 28px}
+  .okbtn{width:100%;border-radius:999px;padding:14px;font-weight:700;margin-top:6px}
+  .fab{position:absolute;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;padding:0;font-size:24px;box-shadow:0 6px 18px rgba(43,95,217,.55);z-index:5}
+  .backdrop.clear{background:transparent;align-items:flex-end;justify-content:flex-end}
+  .fabmenu{margin:0 16px calc(156px + env(safe-area-inset-bottom)) 0;background:#23262e;border-radius:18px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:250px}
+  .mitem{display:flex;align-items:center;gap:12px;width:100%;background:none;color:var(--text);text-align:left;padding:10px 12px;border-radius:12px}
+  .mitem:active{background:rgba(255,255,255,.07)}
+  .mitem .mi{font-size:24px}
+  .mitem b{display:block;font-weight:600}
+  .mitem small{display:block;color:var(--muted);font-size:13px}
+  .sname{display:block;font-weight:600;font-size:14px;margin-bottom:1px}
+  .readonly{padding:16px;text-align:center;color:var(--muted);background:var(--panel);border-top:1px solid var(--line);padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .ptitle{display:block;font-weight:600;line-height:1.2}
+  .peerhead small{display:block;font-weight:400;color:var(--muted);font-size:13px;line-height:1.2}
+  .namerow{display:flex;gap:12px;align-items:center}
+  .avpick{flex:none;width:56px;height:56px;border-radius:50%;padding:0;font-size:24px;background:rgba(76,141,255,.2);overflow:hidden}
+  .avpick img{width:100%;height:100%;object-fit:cover;display:block}
+  .typeopt{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);color:var(--text);border:2px solid transparent;border-radius:14px;padding:10px 14px}
+  .typeopt.on{border-color:var(--accent)}
+  .typeopt b{display:block}
+  .typeopt small{color:var(--muted)}
+  .linkbox{display:flex;flex-direction:column;gap:6px}
+  .island.flush{padding:0;overflow:hidden}
+  .island.flush .row:last-child{border-bottom:0}
+  .row.sel{background:rgba(76,141,255,.12)}
+  .chk{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;color:#fff;line-height:1}
+  .row.sel .chk{background:var(--accent);border-color:var(--accent)}
+  .footbar{padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+  .footbar .err{min-height:0}
+  .nm{display:inline-flex;align-items:center;gap:0;max-width:100%}
+  .badge{display:inline-block;flex:none;margin-left:.45em;vertical-align:middle;cursor:pointer;line-height:0}
+  .verif{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin:10px 20px 0}
+  .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#2b2f39;color:var(--text);padding:12px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:80;max-width:86vw;text-align:center;font-size:15px}
+  .duo{display:flex;gap:10px}
+  .duo button{flex:1}
+  button.warn{background:#c0392b}
+  select.sel{font:inherit;width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+  .stub{flex:1;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+  .stub b{display:block;font-size:20px;color:var(--text);margin-bottom:4px}
+  .ok{color:#4cd08a;min-height:1.4em;margin:0}
+  .searchbox{padding:8px 16px;border-bottom:1px solid var(--line)}
+  .label{color:var(--muted);font-size:13px;margin:4px 0 -6px}
+  .list{flex:1;overflow:auto}
+  .row{display:flex;align-items:center;gap:12px;width:100%;background:none;border-radius:0;border-bottom:1px solid var(--line);padding:12px 16px;text-align:left;color:var(--text)}
+  .row small{display:block;color:var(--muted);font-size:13px}
+  .rowtxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .rowtop{display:flex;align-items:baseline;gap:8px}
+  .rowtop b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .rowtop small{flex:none}
+  .rowsub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .brand{font-size:22px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:600;flex:none;overflow:hidden;color:#fff}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .avatar.sm{width:36px;height:36px;font-size:15px}
+  .avatar.big{width:112px;height:112px;font-size:46px}
+  .avbtn{background:none;padding:0;border-radius:50%;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--accent);font-size:14px}
+  .peerhead{display:flex;align-items:center;gap:10px;background:none;padding:0;color:var(--text);font-weight:600;flex:1;text-align:left;font-size:18px}
+  .profile{flex:1;overflow:auto;padding:24px 16px;display:flex;flex-direction:column;gap:12px}
+  .profile .center{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+  .profile h2{margin:0}
+  .bio{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+  .msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:3px}
+  .msg{max-width:82%;padding:7px 12px 6px;border-radius:18px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.3}
+  .msg.first{margin-top:6px}
+  .msg .mt{float:right;margin:7px 0 -3px 12px;font-size:12px;line-height:1;opacity:.6;white-space:nowrap}
+  .msg.gift .mt{float:none;display:block;text-align:right;margin:4px 0 -2px}
+  .daysep{align-self:center;margin:10px 0 6px;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.09);color:var(--text);font-size:13px;font-weight:500}
+  .mine{align-self:flex-end;background:var(--mine)}
+  .theirs{align-self:flex-start;background:var(--theirs)}
+  .mine.tail{border-bottom-right-radius:5px}
+  .theirs.tail{border-bottom-left-radius:5px}
+  .composer{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+  .composer .gbtn{background:none;padding:0 6px;font-size:24px}
+  .msg.gift{text-align:center;min-width:150px}
+  .msg.gift .gemoji{font-size:56px;line-height:1.15;display:block}
+  .msg.gift .gname{font-weight:600;display:block}
+  .msg.gift .gcomment{display:block;margin-top:2px;opacity:.9}
+  .stars{color:#ffc94d;font-weight:600}
+  .balance{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--panel);border-radius:12px}
+  .gifts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .gtile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:14px;background:var(--panel);border:2px solid transparent;color:var(--text)}
+  .gtile.sel{border-color:var(--accent)}
+  .gtile .gemoji{font-size:40px;line-height:1.15}
+  .gtile .stars{font-size:14px}
+  .owned{display:flex;flex-wrap:wrap;gap:8px}
+  .owned span{font-size:30px;background:var(--panel);border-radius:12px;padding:6px 10px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== НАСТРОЙКИ Supabase ======
+const SUPABASE_URL = "https://tksunhdivinioytzvahq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y3R08qTEV94Mh4L1M8T01A_7bo6fhPs";
+// ================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app");
+let me = null;          // пользователь из Supabase Auth
+let myProfile = null;   // моя строка из таблицы profiles
+let channel = null;
+let wallet = 0;          // баланс звёзд
+let catalog = [];        // каталог подарков
+const giftById = {};
+
+// --- маленькие помощники ---
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else if (k === "class") node.className = v;
+    else node.setAttribute(k, v);
+  }
+  node.append(...children);
+  return node;
+}
+function show(...nodes) { app.replaceChildren(...nodes); }
+function closeChannel() {
+  if (channel) { sb.removeChannel(channel); channel = null; }
+}
+
+// аватарка: фото, если есть, иначе первая буква ника
+function avatar(p, size = "") {
+  const box = el("div", { class: "avatar " + size });
+  if (p.avatar_url) box.append(el("img", { src: p.avatar_url, alt: "" }));
+  else box.textContent = (p.username || "?").slice(0, 1).toUpperCase();
+  return box;
+}
+
+// обрезаем фото до квадрата и уменьшаем, чтобы загрузка была быстрой
+function resizeToSquare(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      canvas.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Не удалось обработать фото"))), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Не удалось открыть изображение")); };
+    img.src = url;
+  });
+}
+
+// --- значки (галочки) ---
+const BADGES = {
+  official: { label: "Официальный аккаунт", title: "Официальный аккаунт", color: "#3d8bff" },
+  org: { label: "Аккаунт верифицирован организацией «Messenger».", title: "Аккаунт верифицирован организацией «Messenger»", color: "#8b91a0" },
+  dev: { label: "Разработчик Messenger", title: "Разработчик Messenger", color: "#27c46b" },
+  admin: { label: "Admin Messenger", title: "Admin Messenger", color: "#ff9f1a" },
+};
+const SEAL = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>';
+
+let toastTimer;
+function toast(text) {
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
+  const t = el("div", { class: "toast" }, text);
+  document.body.append(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 2600);
+}
+
+function badgeIcon(type, size = 17) {
+  const b = BADGES[type];
+  if (!b) return null;
+  const n = el("span", { class: "badge", style: `color:${b.color};width:${size}px;height:${size}px`, role: "img", "aria-label": b.title });
+  n.innerHTML = SEAL; // константа, не пользовательский текст
+  n.addEventListener("click", (e) => { e.stopPropagation(); toast(b.title); });
+  return n;
+}
+// ник + значок справа (с небольшим отступом, как в Телеграме)
+function nameWithBadge(u, size) {
+  const bd = badgeIcon(u.badge, size);
+  return el("span", { class: "nm" }, u.username, ...(bd ? [bd] : []));
+}
+function badgeFooter(u) {
+  const b = BADGES[u.badge];
+  if (!b) return el("span", {});
+  return el("p", { class: "verif" }, badgeIcon(u.badge, 20), el("span", {}, b.label));
+}
+const isRestricted = (p) => p && (p.banned || (p.frozen_until && new Date(p.frozen_until) > new Date()));
+
+async function loadMyProfile() {
+  const { data } = await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge, banned, frozen_until, is_admin, is_owner").eq("id", me.id).single();
+  myProfile = data || { id: me.id, username: (me.email || "я").split("@")[0], bio: null, avatar_url: null };
+}
+
+async function loadWalletAndCatalog() {
+  const [w, c] = await Promise.all([
+    sb.from("wallets").select("stars").eq("user_id", me.id).maybeSingle(),
+    sb.from("gift_catalog").select("id, emoji, name, price").order("sort"),
+  ]);
+  wallet = w.data?.stars ?? 0;
+  catalog = c.data || [];
+  for (const g of catalog) giftById[g.id] = g;
+}
+
+// витрина полученных подарков: возвращает [заголовок, содержимое]
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }).replace(" г.", "");
+  const time = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return date + " в " + time;
+}
+
+// карточка подарка (всплывающее окно снизу, как в Телеграме)
+function giftSheet(g, sender, own, onChange) {
+  const info = giftById[g.gift_id] || { emoji: "🎁", name: "Подарок" };
+  const close = () => back.remove();
+  const toggle = el("button", { class: "linkbtn", type: "button" });
+  const note = el("p", { class: "sheetnote" });
+  function renderNote() {
+    note.replaceChildren(g.hidden ? "Подарок скрыт из Вашего профиля. " : "Подарок виден в Вашем профиле. ", toggle);
+    toggle.textContent = g.hidden ? "Показать ›" : "Скрыть ›";
+  }
+  toggle.addEventListener("click", async () => {
+    const { error } = await sb.rpc("set_gift_hidden", { p_gift: String(g.id), p_hidden: !g.hidden });
+    if (error) { alert("Не получилось: " + error.message + " (выполнен ли gifts_hide.sql?)"); return; }
+    g.hidden = !g.hidden;
+    renderNote();
+    onChange();
+  });
+  const fromVal = el("div", { class: "from" }, avatar(sender || { username: "?" }, "sm"),
+    el("b", {}, sender ? sender.username : "Неизвестно"));
+  if (sender && sender.id !== me.id)
+    fromVal.append(el("button", { class: "tagbtn", type: "button", onclick: () => { close(); giftView(sender); } }, "отправить подарок"));
+  const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "sheet" },
+      el("div", { class: "sheetemoji" }, info.emoji),
+      el("h2", {}, own ? "Подарок Вам" : "Подарок"),
+      ...(own ? [el("p", { class: "sheetsub" }, "Вы можете скрыть этот подарок из профиля.")] : [el("p", { class: "sheetsub" }, info.name)]),
+      el("div", { class: "gtable" },
+        el("div", {}, el("span", {}, "От"), fromVal),
+        el("div", {}, el("span", {}, "Дата"), el("div", {}, fmtDateTime(g.created_at))),
+        el("div", {}, el("span", {}, "Стоимость"), el("div", {}, el("span", { class: "stars" }, "⭐ " + g.price)))),
+      ...(own ? [note] : []),
+      el("button", { class: "okbtn", type: "button", onclick: close }, "OK")));
+  if (own) renderNote();
+  document.body.append(back);
+}
+
+// вкладки профиля: Публикации / Архив / Подарки
+function giftsSection(userId, title) {
+  const own = userId === me.id;
+  let gifts = [], senders = new Map(), tab = "gifts";
+  const tabs = el("div", { class: "ptabs" });
+  const body = el("div", { class: "pbody" });
+  const wrap = el("div", {}, tabs, body);
+
+  function stub() { return el("div", { class: "stubmini" }, el("b", {}, "В разработке"), "Этот раздел скоро появится"); }
+
+  function renderTabs() {
+    const visible = gifts.filter((g) => own || !g.hidden);
+    const t = (id, label) => el("button", { class: "ptab" + (tab === id ? " on" : ""), type: "button",
+      onclick: () => { tab = id; renderTabs(); } }, label);
+    tabs.replaceChildren(t("pubs", "Публикации"), t("arch", "Архив публикаций"),
+      t("gifts", "Подарки" + (visible.length ? " · " + visible.length : "")));
+    tabs.scrollLeft = tabs.querySelector(".on").offsetLeft - 16;
+    if (tab !== "gifts") { body.replaceChildren(stub()); return; }
+    if (!visible.length) { body.replaceChildren(el("p", { class: "muted center" }, "Пока нет подарков")); return; }
+    const grid = el("div", { class: "ggrid" }, ...visible.map((g) => {
+      const info = giftById[g.gift_id] || { emoji: "🎁" };
+      const snd = senders.get(g.sender_id);
+      return el("button", { class: "gcard" + (g.hidden ? " dim" : ""), type: "button",
+        onclick: () => giftSheet(g, snd, own, renderTabs) },
+        el("span", { class: "gsender" }, avatar(snd || { username: "?" }, "sm")),
+        el("span", { class: "gbig" }, info.emoji),
+        ...(g.hidden ? [el("span", { class: "ghid" }, "скрыт")] : []));
+    }));
+    body.replaceChildren(
+      el("div", { class: "chips" }, el("span", { class: "chip on" }, "Все подарки")),
+      grid,
+      el("p", { class: "hint" }, "Нажмите на подарок, чтобы посмотреть подробности" + (own ? " или скрыть его из профиля." : ".")));
+  }
+
+  body.replaceChildren(el("p", { class: "muted center" }, "Загрузка…"));
+  renderTabs();
+  sb.from("gifts").select("*").eq("recipient_id", userId)
+    .order("created_at", { ascending: false }).limit(60)
+    .then(async ({ data }) => {
+      gifts = data || [];
+      const ids = [...new Set(gifts.map((g) => g.sender_id))];
+      if (ids.length) {
+        const { data: ps } = await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", ids);
+        senders = new Map((ps || []).map((u) => [u.id, u]));
+      }
+      renderTabs();
+    });
+  return wrap;
+}
+
+// --- общие кусочки профиля (как в Телеграме) ---
+function infoRow(label, value, onclick) {
+  const v = el("div", { class: "iv" }, value);
+  const l = el("div", { class: "il" }, label);
+  const row = el(onclick ? "button" : "div", onclick ? { class: "irow", type: "button" } : { class: "irow" }, v, l);
+  if (onclick) row.addEventListener("click", () => onclick(l, label));
+  return row;
+}
+function action(icon, label, fn) {
+  return el("button", { class: "act", type: "button", onclick: fn }, el("span", { class: "ai" }, icon), el("span", {}, label));
+}
+function copyHandle(handle) {
+  return (l, label) => {
+    try { navigator.clipboard.writeText("@" + handle); l.textContent = "Скопировано ✓"; }
+    catch { l.textContent = "Не удалось скопировать"; }
+    setTimeout(() => { l.textContent = label; }, 1500);
+  };
+}
+
+// --- юзернеймы ---
+const HANDLE_RE = /^[a-z0-9_]{5,32}$/;
+const HANDLE_DOMAIN = "@smartgram.app"; // служебный адрес: пользователю email не нужен
+const normHandle = (v) => v.trim().replace(/^@/, "").toLowerCase();
+const handleError = (h) => HANDLE_RE.test(h) ? null :
+  "Юзернейм: от 5 до 32 символов, только латиница a-z, цифры и _";
+
+// --- экран входа / регистрации ---
+function authView() {
+  closeChannel();
+  let signup = false;
+  const err = el("p", { class: "err" });
+  const name = el("input", { placeholder: "Ник (как тебя видят друзья)", maxlength: "30", autocomplete: "nickname" });
+  const login = el("input", { placeholder: "Юзернейм", autocapitalize: "none", autocorrect: "off", spellcheck: "false", autocomplete: "username" });
+  const pass = el("input", { type: "password", placeholder: "Пароль (от 6 символов)", autocomplete: "current-password" });
+  const pass2 = el("input", { type: "password", placeholder: "Повтори пароль", autocomplete: "new-password" });
+  const btn = el("button", {});
+  const toggle = el("button", { class: "ghost", type: "button" });
+
+  function render() {
+    name.style.display = signup ? "" : "none";
+    pass2.style.display = signup ? "" : "none";
+    login.placeholder = signup ? "Юзернейм (от 5 символов, a-z 0-9 _)" : "Юзернейм (или email)";
+    btn.textContent = signup ? "Зарегистрироваться" : "Войти";
+    toggle.textContent = signup ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Регистрация";
+    err.textContent = "";
+  }
+  toggle.addEventListener("click", () => { signup = !signup; render(); });
+
+  btn.addEventListener("click", async () => {
+    err.textContent = "";
+    btn.disabled = true;
+    try {
+      if (signup) {
+        const nick = name.value.trim();
+        const handle = normHandle(login.value);
+        if (nick.length < 2) throw new Error("Ник должен быть от 2 символов");
+        const he = handleError(handle);
+        if (he) throw new Error(he);
+        if (pass.value.length < 6) throw new Error("Пароль должен быть от 6 символов");
+        if (pass.value !== pass2.value) throw new Error("Пароли не совпадают");
+        const { data: free, error: ce } = await sb.rpc("handle_available", { h: handle });
+        if (ce) throw ce;
+        if (!free) throw new Error("Этот юзернейм уже занят");
+        const { data, error } = await sb.auth.signUp({
+          email: handle + HANDLE_DOMAIN,
+          password: pass.value,
+          options: { data: { username: nick, handle } },
+        });
+        if (error) throw error;
+        if (!data.session) throw new Error("Не удалось войти сразу после регистрации. Попробуй войти.");
+      } else {
+        const v = login.value.trim();
+        const email = v.includes("@") && !v.startsWith("@") ? v : normHandle(v) + HANDLE_DOMAIN;
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass.value });
+        if (error) throw new Error(error.message === "Invalid login credentials" ? "Неверный юзернейм или пароль" : error.message);
+      }
+    } catch (e) {
+      err.textContent = e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  show(el("div", { class: "auth" }, el("h1", {}, "Мессенджер"), name, login, pass, pass2, err, btn, toggle));
+  render();
+}
+
+// --- нижнее меню (как в Телеграме) ---
+function tabBar(active) {
+  const t = (id, icon, label, fn) =>
+    el("button", { class: "tab" + (id === active ? " on" : ""), type: "button", onclick: fn },
+      el("span", { class: "ti" }, icon), el("span", {}, label));
+  return el("nav", { class: "tabbar" },
+    t("chats", "💬", "Чаты", listView),
+    t("contacts", "👥", "Контакты", contactsView),
+    t("settings", "⚙️", "Настройки", settingsView),
+    t("profile", avatar(myProfile, "sm"), "Профиль", profileView));
+}
+
+function stubView(active, title) {
+  closeChannel();
+  show(
+    el("header", {}, el("b", {}, title)),
+    el("div", { class: "stub" }, el("div", {}, el("b", {}, "В разработке"), "Этот раздел скоро появится")),
+    tabBar(active));
+}
+const contactsView = () => stubView("contacts", "Контакты");
+function settingsView() {
+  closeChannel();
+  const canAdmin = myProfile && (myProfile.is_admin || myProfile.is_owner);
+  show(
+    el("header", {}, el("b", {}, "Настройки")),
+    el("div", { class: "pscroll" },
+      ...(canAdmin ? [el("div", { class: "island flush" },
+        el("button", { class: "row", type: "button", onclick: () => adminView() },
+          el("span", { class: "mi" }, "🛡"), el("span", { class: "rowtxt" }, el("b", {}, "Админ-панель"), el("small", {}, "Пользователи, звёзды, блокировки"))))] : []),
+      el("div", { class: "stubmini" }, el("b", {}, "В разработке"), "Остальные настройки скоро появятся")),
+    tabBar("settings"));
+}
+
+// --- админ-панель ---
+const fmtDate = (iso) => new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+const frozenNow = (u) => u.frozen_until && new Date(u.frozen_until) > new Date();
+
+async function adminView() {
+  closeChannel();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  const search = el("input", { class: "search", placeholder: "🔍 Поиск по нику или @юзернейму", autocapitalize: "none", spellcheck: "false" });
+  const total = el("p", { class: "hint", style: "margin:8px 16px" });
+  show(el("header", {}, el("button", { class: "icon", onclick: settingsView }, "←"), el("b", {}, "Админ-панель")),
+    el("div", { class: "searchbox" }, search), total, list);
+  let seq = 0;
+  async function load() {
+    const my = ++seq;
+    const q = search.value.trim().replace(/^@/, "");
+    const { data, error } = await sb.rpc("admin_list_users", { p_search: q || null, p_id: null });
+    if (my !== seq) return;
+    if (error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+    total.textContent = "Пользователей: " + data.length + " (новые сверху)";
+    list.replaceChildren(...(data.length ? data.map((u) => {
+      const flags = (u.banned ? " · 🚫 заблокирован" : "") + (frozenNow(u) ? " · ❄️ заморожен" : "") +
+        (u.is_owner ? " · владелец" : u.is_admin ? " · админ" : "");
+      return personRow(u, (u.handle ? "@" + u.handle + " · " : "") + "рег. " + fmtDate(u.created_at) + flags,
+        "⭐ " + u.stars, () => adminUserView(u));
+    }) : [el("p", { class: "muted" }, "Никого не найдено")]));
+  }
+  let t;
+  search.addEventListener("input", () => { clearTimeout(t); t = setTimeout(load, 250); });
+  load();
+}
+
+async function adminUserView(u) {
+  closeChannel();
+  const iAmOwner = !!myProfile.is_owner;
+  const call = async (fn, args) => {
+    const { error } = await sb.rpc(fn, args);
+    if (error) { alert(error.message); return false; }
+    const { data } = await sb.rpc("admin_list_users", { p_search: null, p_id: u.id });
+    if (data && data[0]) u = data[0];
+    adminUserView(u);
+    return true;
+  };
+  const manageable = !u.is_owner && u.id !== me.id && (iAmOwner || !u.is_admin);
+
+  const amount = el("input", { type: "number", inputmode: "numeric", min: "1", placeholder: "Количество звёзд" });
+  const starsBox = el("div", { class: "island pad" },
+    el("p", { class: "label" }, "Звёзды на счёте: ⭐ " + u.stars), amount,
+    el("div", { class: "duo" },
+      el("button", { type: "button", onclick: () => { const n = parseInt(amount.value, 10); if (!(n > 0)) { alert("Введи число больше нуля"); return; } call("admin_adjust_stars", { p_user: u.id, p_delta: n }); } }, "Выдать ⭐"),
+      el("button", { class: "warn", type: "button", onclick: () => { const n = parseInt(amount.value, 10); if (!(n > 0)) { alert("Введи число больше нуля"); return; } call("admin_adjust_stars", { p_user: u.id, p_delta: -n }); } }, "Забрать ⭐")));
+
+  const status = u.banned ? "🚫 Заблокирован" : frozenNow(u) ? "❄️ Заморожен до " + fmtDateTime(u.frozen_until) : "✅ Активен";
+  const info = el("div", { class: "island" },
+    infoRow("Регистрация", fmtDateTime(u.created_at)),
+    infoRow("Статус", status),
+    infoRow("Роль", u.is_owner ? "Владелец" : u.is_admin ? "Админ-панель выдана" : "Обычный пользователь"));
+
+  const blocks = [];
+  if (manageable) {
+    blocks.push(el("div", { class: "island pad" },
+      el("p", { class: "label" }, "Блокировка"),
+      u.banned
+        ? el("button", { type: "button", onclick: () => call("admin_set_ban", { p_user: u.id, p_banned: false }) }, "Разблокировать")
+        : el("button", { class: "warn", type: "button", onclick: () => { if (confirm("Заблокировать " + u.username + "?")) call("admin_set_ban", { p_user: u.id, p_banned: true }); } }, "Заблокировать")));
+
+    const dur = el("select", { class: "sel" },
+      ...[["60", "1 час"], ["360", "6 часов"], ["1440", "1 день"], ["4320", "3 дня"], ["10080", "7 дней"], ["43200", "30 дней"], ["custom", "Свой срок…"]]
+        .map(([v, t]) => el("option", { value: v }, t)));
+    const custom = el("input", { type: "number", inputmode: "numeric", min: "1", placeholder: "Сколько дней", style: "display:none" });
+    dur.addEventListener("change", () => { custom.style.display = dur.value === "custom" ? "" : "none"; });
+    blocks.push(el("div", { class: "island pad" },
+      el("p", { class: "label" }, "Заморозка"),
+      ...(frozenNow(u) ? [el("button", { type: "button", onclick: () => call("admin_set_freeze", { p_user: u.id, p_until: null }) }, "Разморозить")] : [
+        dur, custom,
+        el("button", { class: "warn", type: "button", onclick: () => {
+          let mins = dur.value === "custom" ? parseInt(custom.value, 10) * 1440 : parseInt(dur.value, 10);
+          if (!(mins > 0)) { alert("Укажи срок"); return; }
+          call("admin_set_freeze", { p_user: u.id, p_until: new Date(Date.now() + mins * 60000).toISOString() });
+        } }, "❄️ Заморозить")])));
+  } else {
+    blocks.push(el("p", { class: "hint" }, "Блокировать и замораживать этот аккаунт нельзя"));
+  }
+
+  if (iAmOwner) {
+    const opts = [[null, "Нет значка"], ["official", "Официальный аккаунт (синяя галочка)"], ["org", "Верификация организацией «Messenger»"],
+      ["dev", "Разработчик Messenger"], ["admin", "Admin Messenger"]];
+    blocks.push(el("div", { class: "island pad" }, el("p", { class: "label" }, "Значок рядом с ником"),
+      ...opts.map(([v, t]) => el("button", { class: "typeopt" + ((u.badge || null) === v ? " on" : ""), type: "button",
+        onclick: () => call("admin_set_badge", { p_user: u.id, p_badge: v }) },
+        el("b", {}, ...(v ? [badgeIcon(v, 16), " "] : []), t)))));
+    if (!u.is_owner) blocks.push(el("div", { class: "island pad" }, el("p", { class: "label" }, "Доступ в админ-панель"),
+      u.is_admin
+        ? el("button", { class: "warn", type: "button", onclick: () => call("admin_set_admin", { p_user: u.id, p_admin: false }) }, "Забрать доступ")
+        : el("button", { type: "button", onclick: () => { if (confirm("Выдать " + u.username + " доступ в админ-панель?")) call("admin_set_admin", { p_user: u.id, p_admin: true }); } }, "Выдать доступ")));
+  }
+
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: adminView }, "←")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(u, "big"), el("h2", {}, nameWithBadge(u, 22)),
+        el("div", { class: "sub" }, u.handle ? "@" + u.handle : "без юзернейма")),
+      info, starsBox, ...blocks));
+}
+
+// --- экран для заблокированного / замороженного аккаунта ---
+function lockedView() {
+  closeChannel();
+  const banned = myProfile.banned;
+  show(el("div", { class: "auth" },
+    el("h1", {}, banned ? "🚫 Аккаунт заблокирован" : "❄️ Аккаунт заморожен"),
+    el("p", { class: "muted", style: "padding:0" }, banned
+      ? "Администратор заблокировал этот аккаунт."
+      : "Аккаунт заморожен до " + fmtDateTime(myProfile.frozen_until) + ". После этого времени всё заработает снова."),
+    el("button", { type: "button", onclick: () => sb.auth.signOut() }, "Выйти из аккаунта")));
+}
+
+// --- чаты (диалоги, группы, каналы) + поиск ---
+function shortTime(iso) {
+  const d = new Date(iso), now = new Date();
+  if (d.toDateString() === now.toDateString())
+    return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+}
+
+function plural(n, f) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  return n + " " + (a > 10 && a < 20 ? f[2] : b > 1 && b < 5 ? f[1] : b === 1 ? f[0] : f[2]);
+}
+const membersText = (c, n) => c.kind === "channel"
+  ? plural(n, ["подписчик", "подписчика", "подписчиков"])
+  : plural(n, ["участник", "участника", "участников"]);
+const chatAsPerson = (c) => ({ username: c.title, avatar_url: c.avatar_url });
+
+function personRow(u, sub, time, onclick) {
+  return el("button", { class: "row", onclick: onclick || (() => chatView(u)) },
+    avatar(u),
+    el("span", { class: "rowtxt" },
+      el("span", { class: "rowtop" }, el("b", {}, nameWithBadge(u, 15)), ...(time ? [el("small", {}, time)] : [])),
+      ...(sub ? [el("small", { class: "rowsub" }, sub)] : [])));
+}
+
+// открыть чат: участнику - переписку, остальным - карточку со "Вступить"
+async function openChat(chat) {
+  const { data } = await sb.from("chat_members").select("role").eq("chat_id", chat.id).eq("user_id", me.id).maybeSingle();
+  data ? chatView(chat) : chatInfoView(chat);
+}
+
+function createMenu() {
+  const close = () => back.remove();
+  const item = (icon, title, sub, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+    el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), el("small", {}, sub)));
+  const back = el("div", { class: "backdrop clear", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "fabmenu" },
+      item("👥", "Создать группу", "Общий чат для друзей", () => createChatView("group")),
+      item("📣", "Создать канал", "Только вы публикуете", () => createChatView("channel"))));
+  document.body.append(back);
+}
+
+async function listView() {
+  closeChannel();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  const search = el("input", { class: "search", placeholder: "🔍 Поиск по @юзернейму или нику", autocapitalize: "none", spellcheck: "false" });
+  const fab = el("button", { class: "fab", type: "button", onclick: createMenu, "aria-label": "Создать" }, "✏️");
+  show(el("header", {}, el("b", { class: "brand" }, "Messenger")),
+    el("div", { class: "searchbox" }, search), list, tabBar("chats"), fab);
+
+  let seq = 0;
+  async function loadDialogs() {
+    const my = ++seq;
+    const [mr, cm] = await Promise.all([
+      sb.from("messages").select("sender_id, recipient_id, chat_id, body, gift_id, created_at")
+        .order("created_at", { ascending: false }).limit(500),
+      sb.from("chat_members").select("chat_id").eq("user_id", me.id),
+    ]);
+    if (my !== seq) return;
+    if (mr.error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + mr.error.message)); return; }
+    const last = new Map();
+    for (const m of mr.data) {
+      const key = m.chat_id ? "c:" + m.chat_id : "u:" + (m.sender_id === me.id ? m.recipient_id : m.sender_id);
+      if (!last.has(key)) last.set(key, m);
+    }
+    for (const r of cm.data || []) if (!last.has("c:" + r.chat_id)) last.set("c:" + r.chat_id, null);
+    if (!last.size) {
+      list.replaceChildren(el("p", { class: "muted" }, "Чатов пока нет. Найди друга через поиск по @юзернейму или нажми ✏️, чтобы создать группу."));
+      return;
+    }
+    const chatIds = [], userIds = new Set();
+    for (const [k, m] of last) {
+      if (k[0] === "c") { chatIds.push(k.slice(2)); if (m && m.sender_id !== me.id) userIds.add(m.sender_id); }
+      else userIds.add(k.slice(2));
+    }
+    const [cr, pr] = await Promise.all([
+      chatIds.length ? sb.from("chats").select("*").in("id", chatIds) : { data: [] },
+      userIds.size ? sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", [...userIds]) : { data: [] },
+    ]);
+    if (my !== seq) return;
+    const chatById = new Map((cr.data || []).map((c) => [c.id, c]));
+    const profById = new Map((pr.data || []).map((u) => [u.id, u]));
+    const rows = [];
+    for (const [k, m] of last) {
+      const text = m ? (m.gift_id ? "🎁 Подарок" : m.body) : "";
+      if (k[0] === "c") {
+        const c = chatById.get(k.slice(2));
+        if (!c) continue;
+        const who = m && c.kind === "group" ? (m.sender_id === me.id ? "Вы" : (profById.get(m.sender_id)?.username || "?")) + ": " : "";
+        rows.push({ ts: m ? m.created_at : c.created_at,
+          node: personRow(chatAsPerson(c), m ? who + text : "Нет сообщений", m ? shortTime(m.created_at) : "", () => chatView(c)) });
+      } else {
+        const u = profById.get(k.slice(2));
+        if (!u) continue;
+        rows.push({ ts: m.created_at, node: personRow(u, (m.sender_id === me.id ? "Вы: " : "") + text, shortTime(m.created_at)) });
+      }
+    }
+    rows.sort((x, y) => (x.ts < y.ts ? 1 : -1));
+    list.replaceChildren(...rows.map((r) => r.node));
+  }
+
+  async function loadSearch(q) {
+    const my = ++seq;
+    const esc = q.replace(/[,()]/g, "").replace(/[\\%_]/g, (c) => "\\" + c);
+    if (!esc) { list.replaceChildren(el("p", { class: "muted" }, "Никого не найдено")); return; }
+    const [pr, cr] = await Promise.all([
+      sb.from("profiles").select("id, username, handle, bio, avatar_url, badge")
+        .neq("id", me.id).or(`handle.ilike.%${esc}%,username.ilike.%${esc}%`).order("username").limit(50),
+      sb.from("chats").select("*").or(`handle.ilike.%${esc}%,title.ilike.%${esc}%`).order("title").limit(20),
+    ]);
+    if (my !== seq) return;
+    if (pr.error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + pr.error.message)); return; }
+    const out = [
+      ...(cr.data || []).map((c) => personRow(chatAsPerson(c),
+        (c.kind === "channel" ? "Канал" : "Группа") + (c.handle ? " · @" + c.handle : ""), "", () => openChat(c))),
+      ...pr.data.map((u) => personRow(u, u.handle ? "@" + u.handle : (u.bio || "").slice(0, 60))),
+    ];
+    list.replaceChildren(...(out.length ? out : [el("p", { class: "muted" }, "Ничего не найдено")]));
+  }
+
+  let t;
+  const run = () => {
+    const q = search.value.trim().replace(/^@/, "");
+    q ? loadSearch(q) : loadDialogs();
+  };
+  search.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 250); });
+  loadDialogs();
+}
+
+// --- создание группы / канала ---
+async function createChatView(kind) {
+  closeChannel();
+  const isCh = kind === "channel";
+  let avatarBlob = null, isPublic = false;
+  const selected = new Set();
+  let people = [];
+  const err = el("p", { class: "err" });
+  const nameInput = el("input", { placeholder: isCh ? "Название канала" : "Название группы", maxlength: "64" });
+  const descInput = el("textarea", { rows: "2", maxlength: "255", placeholder: "Описание (необязательно)" });
+  const handleInput = el("input", { placeholder: "Ссылка, например my_channel", maxlength: "32", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
+  const fileInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  const avBox = el("button", { class: "avpick", type: "button", onclick: () => fileInput.click() }, "📷");
+  const createBtn = el("button", { type: "button" }, isCh ? "Создать канал" : "Создать группу");
+  const peopleBox = el("div", { class: "island flush" }, el("p", { class: "muted" }, "Загрузка…"));
+  const filter = el("input", { class: "search", placeholder: "🔍 Поиск по людям", autocapitalize: "none", spellcheck: "false" });
+  const counter = el("span", {});
+
+  fileInput.addEventListener("change", async () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    try {
+      avatarBlob = await resizeToSquare(f);
+      avBox.replaceChildren(el("img", { src: URL.createObjectURL(avatarBlob), alt: "" }));
+    } catch (e) { err.textContent = e.message; }
+    fileInput.value = "";
+  });
+
+  const optPublic = el("button", { type: "button", class: "typeopt" }, el("b", {}, "Публичный"), el("small", {}, "Находится через поиск, вступить может любой"));
+  const optPrivate = el("button", { type: "button", class: "typeopt on" }, el("b", {}, "Частный"), el("small", {}, "Только те, кого ты добавишь"));
+  const linkBox = el("div", { class: "linkbox", style: "display:none" }, el("p", { class: "label" }, "Ссылка (от 5 символов: a-z, цифры, _)"), handleInput);
+  function setType(pub) {
+    isPublic = pub;
+    optPublic.classList.toggle("on", pub);
+    optPrivate.classList.toggle("on", !pub);
+    linkBox.style.display = pub ? "" : "none";
+  }
+  optPublic.addEventListener("click", () => setType(true));
+  optPrivate.addEventListener("click", () => setType(false));
+
+  function renderPeople() {
+    const q = filter.value.trim().replace(/^@/, "").toLowerCase();
+    const rows = people
+      .filter((u) => !q || u.username.toLowerCase().includes(q) || (u.handle || "").includes(q))
+      .map((u) => el("button", { class: "row" + (selected.has(u.id) ? " sel" : ""), type: "button",
+        onclick: () => { selected.has(u.id) ? selected.delete(u.id) : selected.add(u.id); renderPeople(); } },
+        avatar(u, "sm"),
+        el("span", { class: "rowtxt" }, el("b", {}, u.username), ...(u.handle ? [el("small", {}, "@" + u.handle)] : [])),
+        el("span", { class: "chk" }, selected.has(u.id) ? "✓" : "")));
+    peopleBox.replaceChildren(...(rows.length ? rows : [el("p", { class: "muted" }, "Никого не найдено")]));
+    counter.textContent = selected.size ? " · выбрано " + selected.size : "";
+  }
+  filter.addEventListener("input", renderPeople);
+
+  createBtn.addEventListener("click", async () => {
+    const title = nameInput.value.trim();
+    if (!title) { err.textContent = "Введи название"; return; }
+    let handle = null;
+    if (isCh && isPublic) {
+      handle = normHandle(handleInput.value);
+      const he = handleError(handle);
+      if (he) { err.textContent = "Ссылка: от 5 до 32 символов, только латиница a-z, цифры и _"; return; }
+    }
+    err.textContent = "";
+    createBtn.disabled = true;
+    try {
+      let url = null;
+      if (avatarBlob) {
+        const path = `${me.id}/chat-${Date.now()}.jpg`;
+        const { error: ue } = await sb.storage.from("avatars").upload(path, avatarBlob, { contentType: "image/jpeg" });
+        if (ue) throw ue;
+        url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      }
+      const { data, error } = await sb.rpc("create_chat", {
+        p_kind: kind, p_title: title, p_description: descInput.value.trim() || null, p_avatar: url,
+        p_public: isCh && isPublic, p_handle: handle, p_members: [...selected],
+      });
+      if (error) throw error;
+      chatView(data);
+    } catch (e) {
+      err.textContent = e.code === "23505" ? "Эта ссылка уже занята" : e.message;
+    } finally {
+      createBtn.disabled = false;
+    }
+  });
+
+  show(
+    el("header", {}, el("button", { class: "icon", onclick: listView }, "←"), el("b", {}, isCh ? "Новый канал" : "Новая группа")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "island pad" },
+        el("div", { class: "namerow" }, avBox, nameInput), descInput),
+      ...(isCh ? [el("div", { class: "island pad" }, el("p", { class: "label" }, "Тип канала"), optPrivate, optPublic, linkBox)] : []),
+      el("div", { class: "island pad" }, el("p", { class: "label" }, el("span", {}, isCh ? "Подписчики" : "Участники"), counter), filter),
+      peopleBox, fileInput),
+    el("div", { class: "footbar" }, err, createBtn)
+  );
+
+  const { data } = await sb.from("profiles").select("id, username, handle, avatar_url, badge").neq("id", me.id).order("username").limit(200);
+  people = data || [];
+  renderPeople();
+}
+
+// --- карточка группы / канала ---
+async function chatInfoView(chat) {
+  closeChannel();
+  show(el("header", { class: "bare" }, el("button", { class: "icon", onclick: listView }, "←")),
+    el("div", { class: "pscroll" }, el("p", { class: "muted center" }, "Загрузка…")));
+  const [mr, cr] = await Promise.all([
+    sb.from("chat_members").select("user_id, role").eq("chat_id", chat.id).limit(500),
+    sb.from("chats").select("*").eq("id", chat.id).single(),
+  ]);
+  if (cr.data) chat = cr.data;
+  const members = mr.data || [];
+  const ids = members.map((m) => m.user_id);
+  const { data: ps } = ids.length ? await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", ids) : { data: [] };
+  const byId = new Map((ps || []).map((u) => [u.id, u]));
+  const mine = members.find((m) => m.user_id === me.id);
+  const canLeave = mine && !chat.is_default && mine.role !== "owner";
+  const isCh = chat.kind === "channel";
+  const roleName = { owner: "владелец", admin: "админ" };
+
+  const actions = el("div", { class: "actions" });
+  if (mine) {
+    actions.append(action("💬", "Открыть", () => chatView(chat)));
+    if (canLeave) actions.append(action("🚪", "Выйти", async () => {
+      if (!confirm("Выйти из «" + chat.title + "»?")) return;
+      const { error } = await sb.rpc("leave_chat", { p_chat: chat.id });
+      if (error) alert(error.message); else listView();
+    }));
+  } else {
+    actions.append(action("➕", isCh ? "Подписаться" : "Вступить", async () => {
+      const { error } = await sb.rpc("join_chat", { p_chat: chat.id });
+      if (error) alert(error.message); else chatView(chat);
+    }));
+  }
+
+  const info = el("div", { class: "island" },
+    infoRow("Описание", chat.description || "Пока ничего не написано"),
+    infoRow("Тип", (isCh ? "Канал" : "Группа") + (chat.is_public ? " · публичный" : " · частный")),
+    ...(chat.handle ? [infoRow("Ссылка", "@" + chat.handle, copyHandle(chat.handle))] : []),
+    ...(chat.is_default ? [infoRow("Важно", "Из этого чата выйти нельзя")] : []));
+
+  const list = el("div", { class: "island flush" }, ...members.filter((m) => byId.has(m.user_id)).map((m) => {
+    const u = byId.get(m.user_id);
+    return personRow(u, (roleName[m.role] || "") || (u.handle ? "@" + u.handle : ""), "",
+      m.user_id === me.id ? () => profileView() : () => peerProfileView(u));
+  }));
+
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: listView }, "←")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(chatAsPerson(chat), "big"), el("h2", {}, chat.title),
+        el("div", { class: "sub" }, membersText(chat, members.length))),
+      actions, info,
+      el("div", { class: "ptabs" }, el("span", { class: "ptab on" }, (isCh ? "Подписчики" : "Участники") + " · " + members.length)),
+      el("div", { style: "height:12px" }), list));
+}
+
+// --- мой профиль (редактирование) ---
+function profileView() {
+  closeChannel();
+  const err = el("p", { class: "err" });
+  const nameInput = el("input", { value: myProfile.username, maxlength: "30", placeholder: "Ник" });
+  const handleInput = el("input", { value: myProfile.handle || "", maxlength: "32", placeholder: "Юзернейм, например ivan_2024", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
+  const bioInput = el("textarea", { rows: "3", maxlength: "200", placeholder: "Расскажи о себе" }, myProfile.bio || "");
+  const fileInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  const saveBtn = el("button", { type: "button" }, "Сохранить");
+  const cancelBtn = el("button", { class: "ghost", type: "button", onclick: profileView }, "Отмена");
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      const blob = await resizeToSquare(file);
+      const path = `${me.id}/${Date.now()}.jpg`;
+      const { error } = await sb.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" });
+      if (error) throw error;
+      const url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      const { error: ue } = await sb.from("profiles").update({ avatar_url: url }).eq("id", me.id);
+      if (ue) throw ue;
+      myProfile.avatar_url = url;
+      profileView();
+    } catch (e) {
+      alert("Не удалось загрузить фото: " + e.message);
+    } finally {
+      fileInput.value = "";
+    }
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    const username = nameInput.value.trim();
+    if (username.length < 2) { err.textContent = "Ник должен быть от 2 символов"; return; }
+    const handle = normHandle(handleInput.value);
+    if (!handle && myProfile.handle) { err.textContent = "Юзернейм нельзя убрать"; return; }
+    if (handle) { const he = handleError(handle); if (he) { err.textContent = he; return; } }
+    err.textContent = "";
+    saveBtn.disabled = true;
+    const patch = { username, handle: handle || null, bio: bioInput.value.trim() || null };
+    const { error } = await sb.from("profiles").update(patch).eq("id", me.id);
+    saveBtn.disabled = false;
+    if (error) { err.textContent = error.code === "23505" ? "Этот юзернейм уже занят" : error.message; return; }
+    Object.assign(myProfile, patch);
+    profileView();
+  });
+
+  const editBox = el("div", { class: "island pad form", style: "display:none" },
+    el("p", { class: "label" }, "Ник"), nameInput,
+    el("p", { class: "label" }, "Юзернейм (по нему тебя находят, от 5 символов)"), handleInput,
+    el("p", { class: "label" }, "О себе"), bioInput,
+    err, saveBtn, cancelBtn);
+
+  const info = el("div", { class: "island" },
+    infoRow("О себе", myProfile.bio || "Пока ничего не написано"),
+    infoRow("Имя пользователя", myProfile.handle ? "@" + myProfile.handle : "Не задан — нажми «Изменить»",
+      myProfile.handle ? copyHandle(myProfile.handle) : null),
+    ...(me.email && !me.email.endsWith(HANDLE_DOMAIN) ? [infoRow("Email", me.email)] : []));
+
+  const edit = () => { info.style.display = "none"; editBox.style.display = ""; actions.style.display = "none"; };
+  const actions = el("div", { class: "actions" },
+    action("📷", "Выбрать фото", () => fileInput.click()),
+    action("✏️", "Изменить", edit),
+    action("⚙️", "Настройки", settingsView));
+
+  show(
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(myProfile, "big"), el("h2", {}, nameWithBadge(myProfile, 22)),
+        el("div", { class: "sub" }, "в сети · ", el("span", { class: "stars" }, "⭐ " + wallet))),
+      actions, info, badgeFooter(myProfile), editBox,
+      giftsSection(me.id, "Подарки"),
+      el("div", { class: "center" }, el("button", { class: "okbtn sendg", type: "button", onclick: listView }, "🎁 Отправить подарки")),
+      el("div", { class: "center" }, el("button", { class: "danger", type: "button", onclick: () => sb.auth.signOut() }, "Выйти из аккаунта")),
+      fileInput),
+    tabBar("profile")
+  );
+}
+
+// --- профиль собеседника ---
+function peerProfileView(peer) {
+  closeChannel();
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: () => chatView(peer) }, "←")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(peer, "big"), el("h2", {}, nameWithBadge(peer, 22))),
+      el("div", { class: "actions" },
+        action("💬", "Написать", () => chatView(peer)),
+        action("🎁", "Подарок", () => giftView(peer))),
+      el("div", { class: "island" },
+        infoRow("О себе", peer.bio || "Пока ничего не написано"),
+        infoRow("Имя пользователя", peer.handle ? "@" + peer.handle : "Не задан",
+          peer.handle ? copyHandle(peer.handle) : null)),
+      badgeFooter(peer),
+      giftsSection(peer.id, "Подарки"))
+  );
+}
+
+// --- выбор и отправка подарка ---
+function giftView(peer) {
+  closeChannel();
+  let selected = null;
+  const err = el("p", { class: "err" });
+  const comment = el("input", { placeholder: "Подпись (необязательно)", maxlength: "200" });
+  const sendBtn = el("button", { type: "button", disabled: "" }, "Выбери подарок");
+  const grid = el("div", { class: "gifts-grid" });
+
+  function updateBtn() {
+    if (!selected) { sendBtn.disabled = true; sendBtn.textContent = "Выбери подарок"; return; }
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Подарить за ⭐ " + selected.price;
+  }
+  function renderGrid() {
+    if (!catalog.length) { grid.replaceChildren(el("p", { class: "muted" }, "Подарки пока недоступны")); return; }
+    grid.replaceChildren(...catalog.map((g) =>
+      el("button", {
+        class: "gtile" + (selected === g ? " sel" : ""), type: "button",
+        onclick: () => { selected = g; renderGrid(); updateBtn(); },
+      },
+        el("span", { class: "gemoji" }, g.emoji),
+        el("span", {}, g.name),
+        el("span", { class: "stars" }, "⭐ " + g.price))
+    ));
+  }
+
+  sendBtn.addEventListener("click", async () => {
+    if (!selected) return;
+    err.textContent = "";
+    sendBtn.disabled = true;
+    const { error } = await sb.rpc("send_gift", {
+      p_recipient: peer.id, p_gift_id: selected.id, p_comment: comment.value.trim() || null,
+    });
+    if (error) { err.textContent = error.message; updateBtn(); return; }
+    await loadWalletAndCatalog();
+    chatView(peer);
+  });
+
+  show(
+    el("header", {},
+      el("button", { class: "icon", onclick: () => chatView(peer) }, "←"),
+      el("b", {}, "Подарок для " + peer.username),
+      el("span", { class: "stars" }, "⭐ " + wallet)),
+    el("div", { class: "profile" }, grid, comment, err, sendBtn)
+  );
+  renderGrid();
+  updateBtn();
+}
+
+// --- личный чат ---
+async function chatView(peer) {
+  closeChannel();
+  const isChat = "kind" in peer;          // группа/канал (у людей поля kind нет)
+  const isChannel = isChat && peer.kind === "channel";
+  let canPost = true;
+  if (isChat) {
+    const { data: mem } = await sb.from("chat_members").select("role").eq("chat_id", peer.id).eq("user_id", me.id).maybeSingle();
+    if (!mem) { chatInfoView(peer); return; }
+    canPost = !isChannel || mem.role === "owner" || mem.role === "admin";
+  }
+  const box = el("div", { class: "msgs" });
+  const input = el("input", { placeholder: "Сообщение", autocomplete: "off" });
+  const form = canPost
+    ? el("form", { class: "composer" },
+        ...(isChat ? [] : [el("button", { class: "gbtn", type: "button", onclick: () => giftView(peer) }, "🎁")]),
+        input, el("button", { type: "submit" }, "➤"))
+    : el("div", { class: "readonly" }, "Писать в канале могут только администраторы");
+  const sub = el("small", {});
+  const head = el("button", { class: "peerhead", type: "button",
+    onclick: () => (isChat ? chatInfoView(peer) : peerProfileView(peer)) },
+    avatar(isChat ? chatAsPerson(peer) : peer, "sm"),
+    isChat ? el("span", {}, el("span", { class: "ptitle" }, peer.title), sub) : el("span", {}, nameWithBadge(peer, 16)));
+  show(el("header", {}, el("button", { class: "icon", onclick: listView }, "←"), head), box, form);
+  if (isChat) {
+    sb.from("chat_members").select("user_id", { count: "exact", head: true }).eq("chat_id", peer.id)
+      .then(({ count }) => { if (count != null) sub.textContent = membersText(peer, count); });
+  }
+
+  // имена авторов в группах
+  const profs = new Map([[me.id, myProfile]]);
+  async function ensureProfiles(ids) {
+    const need = [...new Set(ids)].filter((id) => id && !profs.has(id));
+    if (!need.length) return;
+    const { data } = await sb.from("profiles").select("id, username, handle, avatar_url, badge").in("id", need);
+    (data || []).forEach((u) => profs.set(u.id, u));
+  }
+  const colors = ["#ff7b8a", "#ffb35c", "#7bd88f", "#5cc8ff", "#b496ff", "#ff8fd0"];
+  const colorOf = (id) => colors[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length];
+
+  const seen = new Set();
+  let prev = null; // последнее сообщение: для разделителей дней и группировки
+  function dayLabel(d) {
+    const o = { day: "numeric", month: "long" };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = "numeric";
+    return d.toLocaleDateString("ru-RU", o);
+  }
+  function add(m) {
+    if (seen.has(m.id)) return;
+    seen.add(m.id);
+    const d = new Date(m.created_at);
+    const time = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    const day = d.toDateString();
+    if (!prev || prev.day !== day) box.append(el("div", { class: "daysep" }, dayLabel(d)));
+    const sameGroup = prev && prev.day === day && prev.sender === m.sender_id;
+    if (sameGroup) prev.node.classList.remove("tail");
+    const cls = "msg tail " + (m.sender_id === me.id ? "mine" : "theirs") + (m.gift_id ? " gift" : "") + (sameGroup ? "" : " first");
+    let content;
+    if (m.gift_id) {
+      const g = giftById[m.gift_id] || { emoji: "🎁", name: "Подарок" };
+      content = [el("span", { class: "gemoji" }, g.emoji), el("span", { class: "gname" }, g.name)];
+      if (m.body && m.body !== "Подарок") content.push(el("span", { class: "gcomment" }, m.body));
+    } else {
+      content = [el("span", {}, m.body)];
+    }
+    if (isChat && peer.kind === "group" && m.sender_id !== me.id && !sameGroup) {
+      const u = profs.get(m.sender_id);
+      content.unshift(el("span", { class: "sname", style: "color:" + colorOf(m.sender_id) }, u ? nameWithBadge(u, 14) : "…"));
+    }
+    const node = el("div", { class: cls }, ...content, el("span", { class: "mt" }, time));
+    box.append(node);
+    prev = { day, sender: m.sender_id, node };
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // история (последние 200)
+  const q = sb.from("messages").select("*");
+  const { data, error } = await (isChat
+    ? q.eq("chat_id", peer.id)
+    : q.or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
+  ).order("created_at", { ascending: false }).limit(200);
+  if (error) { box.append(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+  if (isChat) await ensureProfiles(data.map((m) => m.sender_id));
+  data.reverse().forEach(add);
+
+  // новые сообщения в реальном времени
+  channel = sb.channel("chat-" + me.id + "-" + peer.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (p) => {
+      const m = p.new;
+      const ok = isChat
+        ? m.chat_id === peer.id
+        : (m.sender_id === peer.id && m.recipient_id === me.id) || (m.sender_id === me.id && m.recipient_id === peer.id);
+      if (!ok) return;
+      if (isChat) await ensureProfiles([m.sender_id]);
+      add(m);
+    })
+    .subscribe();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    const { data: row, error: err } = await sb.from("messages")
+      .insert(isChat ? { chat_id: peer.id, body: text } : { recipient_id: peer.id, body: text }).select().single();
+    if (err) { input.value = text; alert(/row-level security/.test(err.message) ? "Не отправилось: аккаунт ограничен или в этот чат нельзя писать" : "Не отправилось: " + err.message); }
+    else add(row);
+  });
+  if (canPost) input.focus();
+}
+
+// --- запуск: показываем нужный экран по состоянию входа ---
+let currentUid;
+sb.auth.onAuthStateChange((_event, session) => {
+  const uid = session?.user?.id ?? null;
+  if (uid === currentUid) return; // обновление токена не должно сбрасывать экран
+  currentUid = uid;
+  me = session?.user ?? null;
+  if (!uid) { myProfile = null; authView(); return; }
+  setTimeout(async () => { await loadMyProfile(); if (isRestricted(myProfile)) { lockedView(); return; } await loadWalletAndCatalog(); listView(); }, 0);
+});
+
+// режим приложения: регистрируем service worker (нужен для установки на телефон)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
