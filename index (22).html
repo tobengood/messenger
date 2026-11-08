@@ -1,0 +1,1976 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1015">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SmartGram</title>
+<style>
+  :root{--bg:#06070a;--panel:#0e1015;--line:#1a1d24;--text:#e8eaf0;--muted:#8b91a0;--accent:#4c8dff;--mine:#2b5fd9;--theirs:#1a1d26}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,sans-serif}
+  #app{height:100dvh;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header b{flex:1;font-size:18px}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 16px;background:var(--accent);color:#fff;cursor:pointer}
+  button:disabled{opacity:.6}
+  button.icon{background:none;padding:4px 8px;font-size:22px;color:var(--text)}
+  button.ghost{background:none;color:var(--muted);padding:6px 8px}
+  button.danger{background:none;color:#ff6b6b}
+  input,textarea{font:inherit;width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+  textarea{resize:vertical}
+  .auth{padding:24px 16px;display:flex;flex-direction:column;gap:12px;margin:auto 0}
+  .auth h1{margin:0 0 8px}
+  .err{color:#ff6b6b;min-height:1.4em;margin:0}
+  .muted{color:var(--muted);padding:16px;margin:0}
+  .tabbar{display:flex;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border-radius:12px;padding:6px 0;color:var(--muted);font-size:12px}
+  .tab .ti{font-size:22px;line-height:26px;height:26px;display:flex;align-items:center}
+  .tab .avatar{width:26px;height:26px;font-size:12px}
+  .tab.on{color:var(--accent)}
+  header.bare{background:none;border-bottom:0;position:absolute;left:0;top:0;z-index:2}
+  #app{position:relative}
+  .pscroll{flex:1;overflow:auto;padding-bottom:16px}
+  .pscroll .center{display:flex;justify-content:center;padding:8px 0}
+  .hero{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 16px 8px;background:linear-gradient(180deg,#1c2a4d 0%,transparent 100%)}
+  .hero .avatar{box-shadow:0 0 0 4px rgba(76,141,255,.25)}
+  .hero h2{margin:10px 0 0;font-size:24px;overflow-wrap:anywhere;text-align:center}
+  .hero .sub{color:var(--muted);font-size:14px}
+  .actions{display:flex;gap:10px;padding:12px 16px 4px}
+  .act{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel);color:var(--text);border-radius:16px;padding:12px 4px;font-size:13px}
+  .act .ai{font-size:22px;line-height:26px}
+  .island{background:var(--panel);border-radius:18px;margin:12px 16px 0;padding:2px 16px}
+  .island.pad{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .irow{display:block;width:100%;text-align:left;background:none;border-radius:0;color:var(--text);padding:12px 0;border-bottom:1px solid var(--line)}
+  .irow:last-child{border-bottom:0}
+  .irow .iv{font-size:16px;overflow-wrap:anywhere;white-space:pre-wrap}
+  .irow .il{color:var(--muted);font-size:13px;margin-top:2px}
+  .pill{display:inline-block;margin:12px 0 6px;padding:6px 14px;border-radius:999px;background:rgba(76,141,255,.18);color:var(--accent);font-weight:600;font-size:14px}
+  .island.gifts{padding-bottom:12px}
+  .island.gifts .muted{padding:8px 0}
+  .ptabs{display:flex;gap:4px;margin:16px 16px 0;padding:5px;background:var(--panel);border-radius:999px;overflow-x:auto;scrollbar-width:none}
+  .ptabs::-webkit-scrollbar{display:none}
+  .ptab{flex:none;background:none;color:var(--muted);border-radius:999px;padding:8px 16px;font-weight:600;font-size:15px}
+  .ptab.on{background:rgba(76,141,255,.2);color:var(--accent)}
+  .pbody{padding:12px 16px 0}
+  .stubmini{text-align:center;color:var(--muted);padding:36px 0}
+  .stubmini b{display:block;font-size:18px;color:var(--text);margin-bottom:4px}
+  .chips{display:flex;gap:8px;margin-bottom:12px}
+  .chip{padding:8px 16px;border-radius:999px;background:var(--panel);font-weight:600}
+  .ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .gcard{position:relative;aspect-ratio:1;background:var(--panel);border-radius:18px;padding:0;display:grid;place-items:center;color:var(--text)}
+  .gcard.dim .gbig{opacity:.35}
+  .gbig{font-size:68px;line-height:1}
+  .gsender{position:absolute;left:8px;top:8px}
+  .gcard .gsender .avatar.sm{width:24px;height:24px;font-size:11px}
+  .ghid{position:absolute;bottom:8px;font-size:12px;color:var(--muted)}
+  .hint{color:var(--muted);text-align:center;font-size:14px;margin:16px 8px 0}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+  .sheet{width:100%;max-width:640px;background:#202228;border-radius:24px 24px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));text-align:center;max-height:92dvh;overflow:auto}
+  .sheetemoji{font-size:128px;line-height:1.1;margin-top:8px}
+  .sheet h2{margin:8px 0 4px;font-size:24px}
+  .sheetsub{color:var(--text);margin:0 0 16px}
+  .gtable{border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left}
+  .gtable>div{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+  .gtable>div:last-child{border-bottom:0}
+  .gtable>div>span{flex:none;width:34%;padding:14px 12px;font-weight:700;background:rgba(255,255,255,.04);align-self:stretch;display:flex;align-items:center}
+  .gtable>div>div{padding:10px 12px;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .gtable .from{flex-wrap:wrap}
+  .gtable .from .avatar.sm{width:28px;height:28px;font-size:13px}
+  .gtable .from b{max-width:100%;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tagbtn{background:rgba(76,141,255,.2);color:var(--accent);border-radius:999px;padding:4px 10px;font-size:13px;flex:none}
+  .sheetnote{color:var(--muted);font-size:14px;margin:14px 0}
+  .linkbtn{background:none;color:var(--accent);padding:0;font-size:14px}
+  .sendg{width:auto;padding:14px 28px}
+  .okbtn{width:100%;border-radius:999px;padding:14px;font-weight:700;margin-top:6px}
+  .fab{position:absolute;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;padding:0;font-size:24px;box-shadow:0 6px 18px rgba(43,95,217,.55);z-index:5}
+  .backdrop.clear{background:transparent;align-items:flex-end;justify-content:flex-end}
+  .fabmenu{margin:0 16px calc(156px + env(safe-area-inset-bottom)) 0;background:#23262e;border-radius:18px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:250px}
+  .mitem{display:flex;align-items:center;gap:12px;width:100%;background:none;color:var(--text);text-align:left;padding:10px 12px;border-radius:12px}
+  .mitem:active{background:rgba(255,255,255,.07)}
+  .mitem .mi{font-size:24px}
+  .mitem b{display:block;font-weight:600}
+  .mitem small{display:block;color:var(--muted);font-size:13px}
+  .sname{display:block;font-weight:600;font-size:14px;margin-bottom:1px}
+  .readonly{padding:16px;text-align:center;color:var(--muted);background:var(--panel);border-top:1px solid var(--line);padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .ptitle{display:block;font-weight:600;line-height:1.2}
+  .peerhead small{display:block;font-weight:400;color:var(--muted);font-size:13px;line-height:1.2}
+  .namerow{display:flex;gap:12px;align-items:center}
+  .avpick{flex:none;width:56px;height:56px;border-radius:50%;padding:0;font-size:24px;background:rgba(76,141,255,.2);overflow:hidden}
+  .avpick img{width:100%;height:100%;object-fit:cover;display:block}
+  .typeopt{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);color:var(--text);border:2px solid transparent;border-radius:14px;padding:10px 14px}
+  .typeopt.on{border-color:var(--accent)}
+  .typeopt b{display:block}
+  .typeopt small{color:var(--muted)}
+  .linkbox{display:flex;flex-direction:column;gap:6px}
+  .island.flush{padding:0;overflow:hidden}
+  .island.flush .row:last-child{border-bottom:0}
+  .row.sel{background:rgba(76,141,255,.12)}
+  .chk{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;color:#fff;line-height:1}
+  .row.sel .chk{background:var(--accent);border-color:var(--accent)}
+  .footbar{padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+  .footbar .err{min-height:0}
+  .nm{display:inline-flex;align-items:center;gap:0;max-width:100%}
+  .badge{display:inline-block;flex:none;margin-left:.45em;vertical-align:middle;cursor:pointer;line-height:0}
+  .badge.bl{margin-left:0;margin-right:.45em}
+  .verif{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin:10px 20px 0}
+  .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#2b2f39;color:var(--text);padding:12px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:80;max-width:86vw;text-align:center;font-size:15px}
+  .duo{display:flex;gap:10px}
+  .duo button{flex:1}
+  button.warn{background:#c0392b}
+  select.sel{font:inherit;width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+  .stub{flex:1;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+  .stub b{display:block;font-size:20px;color:var(--text);margin-bottom:4px}
+  .ok{color:#4cd08a;min-height:1.4em;margin:0}
+  .searchbox{padding:8px 16px;border-bottom:1px solid var(--line)}
+  .label{color:var(--muted);font-size:13px;margin:4px 0 -6px}
+  .list{flex:1;overflow:auto}
+  .row{display:flex;align-items:center;gap:12px;width:100%;background:none;border-radius:0;border-bottom:1px solid var(--line);padding:12px 16px;text-align:left;color:var(--text)}
+  .row small{display:block;color:var(--muted);font-size:13px}
+  .rowtxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .rowtop{display:flex;align-items:baseline;gap:8px}
+  .rowtop b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .rowtop small{flex:none}
+  .rowsub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .brand{font-size:22px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:600;flex:none;overflow:hidden;color:#fff}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .avatar.sm{width:36px;height:36px;font-size:15px}
+  .avatar.big{width:112px;height:112px;font-size:46px}
+  .avbtn{background:none;padding:0;border-radius:50%;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--accent);font-size:14px}
+  .peerhead{display:flex;align-items:center;gap:10px;background:none;padding:0;color:var(--text);font-weight:600;flex:1;text-align:left;font-size:18px}
+  .profile{flex:1;overflow:auto;padding:24px 16px;display:flex;flex-direction:column;gap:12px}
+  .profile .center{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+  .profile h2{margin:0}
+  .bio{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+  .msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:3px}
+  .msg{max-width:82%;padding:7px 12px 6px;border-radius:18px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.3}
+  .msg.first{margin-top:6px}
+  .msg .mt{float:right;margin:7px 0 -3px 12px;font-size:12px;line-height:1;opacity:.6;white-space:nowrap}
+  .msg.gift .mt{float:none;display:block;text-align:right;margin:4px 0 -2px}
+  .daysep{align-self:center;margin:10px 0 6px;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.09);color:var(--text);font-size:13px;font-weight:500}
+  .mine{align-self:flex-end;background:var(--mine)}
+  .theirs{align-self:flex-start;background:var(--theirs)}
+  .mine.tail{border-bottom-right-radius:5px}
+  .theirs.tail{border-bottom-left-radius:5px}
+  .composer{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+  .composer .gbtn{background:none;padding:0 6px;font-size:24px}
+  .msg.gift{text-align:center;min-width:150px}
+  .msg.gift .gemoji{font-size:56px;line-height:1.15;display:block}
+  .msg.gift .gname{font-weight:600;display:block}
+  .msg.gift .gcomment{display:block;margin-top:2px;opacity:.9}
+  .stars{color:#ffc94d;font-weight:600}
+  .balance{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--panel);border-radius:12px}
+  .gifts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .gtile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:14px;background:var(--panel);border:2px solid transparent;color:var(--text)}
+  .gtile.sel{border-color:var(--accent)}
+  .gtile .gemoji{font-size:40px;line-height:1.15}
+  .gtile .stars{font-size:14px}
+  .owned{display:flex;flex-wrap:wrap;gap:8px}
+  .owned span{font-size:30px;background:var(--panel);border-radius:12px;padding:6px 10px}
+
+  .composer.tg{align-items:flex-end;gap:8px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:transparent;border-top:0}
+  .cwrap{background:var(--bg)}
+  .cfield{flex:1;display:flex;align-items:center;background:var(--panel);border-radius:24px;padding:0 6px;min-height:48px;min-width:0}
+  .cfield input{border:0;background:transparent;padding:12px 4px;border-radius:0;outline:0}
+  .cbtn{background:none;color:var(--muted);padding:6px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;flex:none}
+  .cbtn.gift{font-size:21px;filter:grayscale(1) brightness(1.4)}
+  .cbtn.trash{color:#ff6b6b}
+  .sendbtn{flex:none;width:48px;height:48px;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--accent);color:#fff}
+  .cfield.rec{gap:10px;padding-right:14px}
+  .recdot{width:10px;height:10px;border-radius:50%;background:#ff4d4d;animation:blink 1s infinite}
+  .rectime{font-variant-numeric:tabular-nums}
+  .rechint{color:var(--muted);font-size:14px;margin-left:auto}
+  @keyframes blink{50%{opacity:.25}}
+  .sending{padding:6px 16px;color:var(--muted);font-size:13px;text-align:center}
+  .emojipanel{height:270px;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column}
+  .etabs{display:flex;border-bottom:1px solid var(--line)}
+  .etab{flex:1;background:none;padding:8px 0;font-size:22px;border-radius:0;border-bottom:2px solid transparent}
+  .etab.on{border-bottom-color:var(--accent)}
+  .egrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(8,1fr);align-content:start;padding:6px}
+  .eb{background:none;padding:4px 0;font-size:26px;line-height:1.3;border-radius:8px}
+  .eb:active{background:rgba(255,255,255,.1)}
+  .sheet.attach{padding-top:10px;text-align:left}
+  .msg.media{padding:4px 4px 6px}
+  .msg.media .mcap{display:block;padding:4px 8px 0}
+  .msg.media .mt{margin-right:6px}
+  .chatimg{display:block;max-width:100%;max-height:340px;border-radius:14px;background:#000}
+  video.chatimg{width:100%}
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:90;display:grid;place-items:center}
+  .viewer img{max-width:100%;max-height:100%;object-fit:contain}
+  .pv{position:fixed;inset:0;background:#000;z-index:70;display:flex;flex-direction:column}
+  .pvx{position:absolute;left:8px;top:8px;color:#fff;z-index:2}
+  .pvm{flex:1;display:grid;place-items:center;min-height:0}
+  .pvm img,.pvm video{max-width:100%;max-height:100%}
+  .pvbar{display:flex;gap:8px;align-items:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#111}
+  .msg.voice{min-width:230px}
+  .voice{display:flex;align-items:center;gap:10px;padding:2px 0}
+  .vplay{flex:none;width:44px;height:44px;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--accent);color:#fff}
+  .mine .vplay{background:#fff;color:var(--mine)}
+  .vbody{flex:1;min-width:0}
+  .wave{display:flex;align-items:center;gap:2px;height:26px;cursor:pointer}
+  .wave i{flex:1;min-width:2px;border-radius:2px;background:rgba(255,255,255,.35)}
+  .theirs .wave i{background:rgba(139,145,160,.55)}
+  .wave i.on{background:#fff}
+  .theirs .wave i.on{background:var(--accent)}
+  .vdur{font-size:12px;opacity:.75;font-variant-numeric:tabular-nums}
+  .sysisland{align-self:center;margin:12px 0 6px;padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-size:14px;font-weight:500;text-align:center;max-width:92%}
+  .giftcard{align-self:center;width:min(290px,86%);margin:2px 0 10px;padding:14px 14px 16px;border-radius:22px;background:rgba(255,255,255,.07);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);text-align:center}
+  .gcemoji{font-size:116px;line-height:1.1}
+  .gctitle{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;margin-top:6px;flex-wrap:wrap}
+  .gctitle .avatar.sm{width:22px;height:22px;font-size:11px}
+  .gccomment{margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .gcsub{color:var(--muted);font-size:14px;margin:6px 4px 12px}
+  .gcbtn{background:rgba(255,255,255,.12);color:var(--text);border-radius:999px;padding:9px 26px;font-weight:600}
+  header.bare{right:0;justify-content:space-between}
+  .backdrop.clear.top{align-items:flex-start}
+  .popmenu{margin:58px 12px 0 0;background:#23262e;border-radius:18px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:250px}
+  .mitem.danger b{color:#ff6b6b}
+  .nft{background:linear-gradient(90deg,#ff3b5c,#ff9a3c,#ff3b8f,#ff3b5c);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:shine 3s linear infinite;font-weight:600}
+  @keyframes shine{to{background-position:300% 0}}
+  .nfttitle{display:block;font-size:17px}
+  .gart{display:inline-block;position:relative;width:1em;height:1em;line-height:1;vertical-align:middle}
+  .gart img{width:100%;height:100%;object-fit:contain;display:block}
+  .gart .acc{position:absolute;right:-.06em;top:-.04em;font-size:.34em;line-height:1}
+  .gtile .gart{font-size:46px}
+  .gcard .gart{font-size:68px}
+  .sheet .gart{font-size:128px;margin-top:8px}
+  .giftcard .gart{font-size:116px}
+  .sheet.up{background-size:120px 110px,cover}
+  .gcard.up{background-size:120px 110px,cover}
+  .sheet.up .gtable{background:rgba(0,0,0,.28)}
+  .bluebig{width:100%;border-radius:999px;padding:15px;font-weight:700;font-size:16px;background:#2f8cf0;color:#fff;margin-top:8px}
+  .rar{opacity:.65;font-size:12px;margin-left:6px}
+  .left{font-size:11px;opacity:.7}
+  .sw{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:8px}
+  .pick{max-height:260px;overflow:auto;display:block}
+  .pick button{display:flex;align-items:center;width:100%;text-align:left;margin:2px 0;padding:10px 12px;border-radius:12px}
+  .pick button.on{outline:2px solid #2f8cf0}
+  .avatar.fav{background:#2f8cf0;color:#fff}
+  .avatar.fav svg{width:55%;height:55%}
+  .rowbot{display:flex;align-items:center;gap:8px}
+  .rowbot small{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ub{background:#2f8cf0;color:#fff;border-radius:999px;min-width:22px;height:22px;padding:0 7px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+  .rowtop small.new{color:#2f8cf0}
+  .avatar video{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== НАСТРОЙКИ Supabase ======
+const SUPABASE_URL = "https://tksunhdivinioytzvahq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y3R08qTEV94Mh4L1M8T01A_7bo6fhPs";
+// ================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const app = document.getElementById("app");
+let me = null;          // пользователь из Supabase Auth
+let myProfile = null;   // моя строка из таблицы profiles
+let channel = null;
+let wallet = 0;          // баланс звёзд
+const APP_NAME = "SmartGram";
+const BUILD = 47;
+let refreshList = null; // обновить список чатов, если он открыт
+const FAV = () => ({ id: me.id, username: "Избранное", avatar_url: null, fav: true });
+const LR_KEY = () => "lr:" + (me && me.id);
+const localRead = new Map(); // key -> время, до которого всё прочитано (мс); дублируется в localStorage
+function loadLocalRead() {
+  try { for (const [k, v] of Object.entries(JSON.parse(localStorage.getItem(LR_KEY()) || "{}"))) localRead.set(k, v); } catch {}
+}
+function saveLocalRead(k, v) {
+  localRead.set(k, v);
+  try { localStorage.setItem(LR_KEY(), JSON.stringify(Object.fromEntries(localRead))); } catch {}
+}
+let models = [], backdrops = [], modelById = {}, backById = {};
+let catalog = [];        // каталог подарков
+const giftById = {};
+
+// --- маленькие помощники ---
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else if (k === "class") node.className = v;
+    else node.setAttribute(k, v);
+  }
+  node.append(...children);
+  return node;
+}
+function show(...nodes) { app.replaceChildren(...nodes); }
+let chatCleanup = null;
+function closeChannel() {
+  refreshList = null;
+  if (chatCleanup) { try { chatCleanup(); } catch {} chatCleanup = null; }
+  if (channel) { sb.removeChannel(channel); channel = null; }
+}
+
+// аватарка: фото, если есть, иначе первая буква ника
+const isVideoUrl = (u) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u || "");
+function avatar(p, size = "") {
+  const box = el("div", { class: "avatar " + size });
+  if (p.fav) { box.classList.add("fav"); box.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>'; }
+  else if (p.avatar_url && isVideoUrl(p.avatar_url)) box.append(el("video", { src: p.avatar_url, autoplay: "", loop: "", muted: "", playsinline: "", disablepictureinpicture: "" }));
+  else if (p.avatar_url) box.append(el("img", { src: p.avatar_url, alt: "" }));
+  else box.textContent = (p.username || "?").slice(0, 1).toUpperCase();
+  return box;
+}
+
+// обрезаем фото до квадрата и уменьшаем, чтобы загрузка была быстрой
+function resizeToSquare(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      canvas.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Не удалось обработать фото"))), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Не удалось открыть изображение")); };
+    img.src = url;
+  });
+}
+
+// --- иконки и помощники для медиа ---
+const ICON = {
+  smile: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><circle cx="8.8" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15.2" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8 14.2c1 1.6 2.4 2.3 4 2.3s3-.7 4-2.3"/></svg>',
+  clip: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>',
+  send: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
+};
+const svgBtn = (cls, icon, props = {}) => { const b = el("button", { class: cls, type: "button", ...props }); b.innerHTML = icon; return b; };
+const setIcon = (b, icon) => { b.innerHTML = icon; };
+const fmtDur = (n) => Math.floor(n / 60) + ":" + String(Math.floor(n % 60)).padStart(2, "0");
+const mediaLabel = (m) => (m.media_type === "voice" ? "🎤 Голосовое сообщение" : m.media_type === "video" ? "🎥 Видео" : "📷 Фото") + (m.body ? ", " + m.body : "");
+
+const EMOJI = {
+  "😀": "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲",
+  "👍": "👍 👎 👌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐️ 🖖 👋 🤏 ✍️ 🙏 👏 🙌 👐 🤲 🤝 💪 🖕 🫶 🫡 🫠 👀 🧠 🦾",
+  "❤️": "❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 ✨ ⭐ 🌟 💫 🔥 💥 💯 ✅ ❌ ❓ ❗ ‼️ ⚡ 🎉 🎊 🎁 🏆 🥇 💎 💰 🚀",
+  "🐶": "🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🙈 🙉 🙊 🐔 🐧 🐦 🦄 🐝 🦋 🐢 🐍 🐙 🐬 🐳 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🍒 🍑 🍍 🥝 🍅 🥑 🍔 🍟 🍕 🌭 🌮 🍿 🍩 🍪 🎂 🍰 🍫 🍬 ☕ 🍺 🥂",
+  "📱": "📱 💻 ⌚ 📷 🎥 🎧 🎤 🎮 🎲 🧩 ⚽ 🏀 🏈 🎾 🏐 🎱 🚗 🚕 ✈️ 🚁 🚢 🏠 🌍 🌙 ☀️ ⛅ 🌧️ ❄️ 🌈 📚 ✏️ 📌 🔑 🔒 💡 🔔 🎈 🧸 🕯️",
+};
+
+// сжать фото перед отправкой (до 1600 px, JPEG)
+function resizeImage(file, max = 1600) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error("Не удалось обработать фото"))), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Не удалось открыть фото")); };
+    img.src = url;
+  });
+}
+
+let playingAudio = null;
+function voiceNode(m) {
+  const N = 32;
+  let seed = [...String(m.id)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const bars = Array.from({ length: N }, () => el("i", { style: `height:${6 + Math.round(rnd() * 18)}px` }));
+  const wave = el("div", { class: "wave" }, ...bars);
+  const btn = svgBtn("vplay", ICON.play);
+  const total = m.media_duration || 0;
+  const dur = el("span", { class: "vdur" }, fmtDur(total));
+  const audio = new Audio(m.media_url);
+  audio.preload = "none";
+  const paint = () => {
+    const t = total || (isFinite(audio.duration) ? audio.duration : 0);
+    const k = t ? audio.currentTime / t : 0;
+    bars.forEach((b, i) => b.classList.toggle("on", i < Math.round(k * N)));
+    dur.textContent = fmtDur(audio.paused && audio.currentTime === 0 ? t : audio.currentTime);
+  };
+  audio.addEventListener("timeupdate", paint);
+  audio.addEventListener("ended", () => { audio.currentTime = 0; setIcon(btn, ICON.play); bars.forEach((b) => b.classList.remove("on")); dur.textContent = fmtDur(total); });
+  audio.addEventListener("pause", () => setIcon(btn, ICON.play));
+  audio.addEventListener("play", () => setIcon(btn, ICON.pause));
+  btn.addEventListener("click", () => {
+    if (audio.paused) {
+      if (playingAudio && playingAudio !== audio) playingAudio.pause();
+      playingAudio = audio;
+      audio.play().catch(() => alert("Не удалось воспроизвести"));
+    } else audio.pause();
+  });
+  wave.addEventListener("click", (e) => {
+    const r = wave.getBoundingClientRect();
+    const t = total || (isFinite(audio.duration) ? audio.duration : 0);
+    if (t) { audio.currentTime = ((e.clientX - r.left) / r.width) * t; paint(); }
+  });
+  return el("div", { class: "voice" }, btn, el("div", { class: "vbody" }, wave, dur));
+}
+
+function openViewer(node) {
+  const back = el("div", { class: "viewer", onclick: () => back.remove() }, node);
+  document.body.append(back);
+}
+
+function mediaNode(m) {
+  if (m.media_type === "voice") return voiceNode(m);
+  if (m.media_type === "video")
+    return el("video", { class: "chatimg", src: m.media_url, controls: "", playsinline: "", preload: "metadata" });
+  return el("img", { class: "chatimg", src: m.media_url, alt: "", loading: "lazy",
+    onclick: () => openViewer(el("img", { src: m.media_url, alt: "" })) });
+}
+
+// --- значки (галочки) ---
+const BADGES = {
+  official: { label: "Официальный аккаунт", title: "Официальный аккаунт", color: "#3d8bff" },
+  org: { label: "Аккаунт верифицирован организацией «SmartGram».", title: "Аккаунт верифицирован организацией «SmartGram»", color: "#8b91a0" },
+  support: { label: "Поддержка", title: "Поддержка", color: "#2f8cf0", left: true },
+  hold: { label: "Аккаунт верифицирован организацией «Hold».", title: "Аккаунт верифицирован организацией «Hold»", color: "#b46cff" },
+  major: { label: "Аккаунт верифицирован организацией «Major».", title: "Аккаунт верифицирован организацией «Major»", color: "#ff5a5a" },
+  dev: { label: "Разработчик SmartGram", title: "Разработчик SmartGram", color: "#27c46b" },
+  admin: { label: "Admin SmartGram", title: "Admin SmartGram", color: "#ff9f1a" },
+};
+const SUPPORT_SEAL = '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12z"/><path fill="#fff" d="M6.9 11.9l9.4-3.7c.45-.18.8.1.68.62l-1.5 7c-.1.45-.45.55-.8.32l-2.2-1.6-1.1 1.05c-.2.2-.4.1-.4-.15l.15-1.9 4.1-3.7c.15-.15-.05-.25-.25-.1l-5 3.15-2.1-.65c-.45-.14-.45-.45.03-.65z"/></svg>';
+const SEAL = '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/></svg>';
+
+// --- контакты (имя контакта видишь только ты) ---
+let contacts = new Map(); // id человека -> { custom_name }
+const dispName = (u) => (u && u.id && contacts.get(u.id)?.custom_name) || (u ? u.username : "");
+async function loadContacts() {
+  const { data } = await sb.from("contacts").select("contact_id, custom_name").eq("owner_id", me.id);
+  contacts = new Map((data || []).map((r) => [r.contact_id, { custom_name: r.custom_name }]));
+}
+
+let toastTimer;
+function toast(text) {
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
+  const t = el("div", { class: "toast" }, text);
+  document.body.append(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.remove(), 2600);
+}
+
+function badgeIcon(type, size = 17) {
+  const b = BADGES[type];
+  if (!b) return null;
+  const n = el("span", { class: "badge" + (b.left ? " bl" : ""), style: `color:${b.color};width:${size}px;height:${size}px`, role: "img", "aria-label": b.title });
+  n.innerHTML = type === "support" ? SUPPORT_SEAL : SEAL; // константы, не пользовательский текст
+  n.addEventListener("click", (e) => { e.stopPropagation(); toast(b.title); });
+  return n;
+}
+// ник + значок справа (с небольшим отступом, как в Телеграме)
+function nameWithBadge(u, size) {
+  const bd = badgeIcon(u.badge, size);
+  const left = BADGES[u.badge] && BADGES[u.badge].left;
+  return el("span", { class: "nm" }, ...(bd && left ? [bd] : []), dispName(u), ...(bd && !left ? [bd] : []));
+}
+function badgeFooter(u) {
+  const b = BADGES[u.badge];
+  if (!b) return el("span", {});
+  return el("p", { class: "verif" }, badgeIcon(u.badge, 20), el("span", {}, b.label));
+}
+const isRestricted = (p) => p && (p.banned || (p.frozen_until && new Date(p.frozen_until) > new Date()));
+
+async function loadMyProfile() {
+  const { data } = await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge, banned, frozen_until, is_admin, is_owner").eq("id", me.id).single();
+  myProfile = data || { id: me.id, username: (me.email || "я").split("@")[0], bio: null, avatar_url: null };
+}
+
+async function loadWalletAndCatalog() {
+  const [w, c, mo, bk] = await Promise.all([
+    sb.from("wallets").select("stars").eq("user_id", me.id).maybeSingle(),
+    sb.from("gift_catalog").select("*").order("sort"),
+    sb.from("gift_models").select("*"),
+    sb.from("gift_backdrops").select("*"),
+  ]);
+  wallet = w.data?.stars ?? 0;
+  catalog = c.data || [];
+  for (const g of catalog) giftById[g.id] = g;
+  models = mo.data || []; backdrops = bk.data || [];
+  for (const m of models) modelById[m.id] = m;
+  for (const b of backdrops) backById[b.id] = b;
+}
+const rarity = (list, id) => { const t = list.reduce((a, x) => a + x.weight, 0); const x = list.find((y) => y.id === id); return x && t ? (x.weight / t * 100).toFixed(1).replace(/\.0$/, "") + "%" : ""; };
+const bdStyle = (id) => { const b = backById[id]; return b ? "radial-gradient(circle at 50% 40%," + b.center + "," + b.edge + ")" : ""; };
+// картинка подарка: png (если есть) или эмодзи; модель меняет оттенок и добавляет аксессуар
+function giftArt(info, modelId) {
+  const m = modelById[modelId];
+  if (!info.image) return el("span", { class: "gart", style: "font-size:inherit" }, info.emoji || "🎁");
+  const img = el("img", { src: info.image, alt: info.name || "" });
+  if (m && m.hue) img.style.filter = "hue-rotate(" + m.hue + "deg)";
+  return el("span", { class: "gart" }, img, ...(m && m.accessory ? [el("span", { class: "acc" }, m.accessory)] : []));
+}
+const PATTERNS = [["messenger","SmartGram",null],["hearts","Сердечки","♥"],["stars","Звёзды","★"],["snow","Снежинки","❄"],["flowers","Цветы","✿"],["moons","Луны","☾"],["bolts","Молнии","ϟ"],["notes","Ноты","♪"],["crowns","Короны","♛"],["diamonds","Ромбы","◆"],["clovers","Клевер","☘"],["planes","Самолёты","✈"],["sparks","Искры","✦"],["paws","Лапки","✲"]];
+const patName = (id) => (PATTERNS.find((p) => p[0] === id) || [0, "—"])[1];
+// узор: маленькие прозрачные значки по всему фону (SVG-плитка)
+function patUrl(patId, color) {
+  const p = PATTERNS.find((x) => x[0] === (patId || "messenger")) || PATTERNS[0];
+  const c = color || "#ffffff";
+  let items = "";
+  if (p[2] === null) {
+    items = `<text x="6" y="22" font-size="11" font-weight="700" font-family="sans-serif" fill="${c}" fill-opacity=".22" transform="rotate(-24 30 20)">SmartGram</text><text x="62" y="70" font-size="11" font-weight="700" font-family="sans-serif" fill="${c}" fill-opacity=".22" transform="rotate(-24 90 66)">SmartGram</text>`;
+  } else {
+    items = [[14,16,14],[58,10,10],[92,30,13],[30,52,10],[72,60,15],[10,92,12],[50,98,11],[104,86,10]]
+      .map(([x, y, f]) => `<text x="${x}" y="${y}" font-size="${f}" font-family="sans-serif" fill="${c}" fill-opacity=".2">${p[2]}</text>`).join("");
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="110">${items}</svg>`;
+  return "url(\"data:image/svg+xml," + encodeURIComponent(svg) + "\")";
+}
+const bgFull = (backId, patId) => { const b = backById[backId]; return b ? patUrl(patId, b.pattern) + "," + bdStyle(backId) : ""; };
+function confirmBuy(g, forName, onYes) {
+  const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) back.remove(); } },
+    el("div", { class: "sheet" }, giftArt(g), el("h2", {}, "Подтвердите покупку"),
+      el("p", { class: "sheetsub" }, "Подарок «" + g.name + "» " + forName + " за ⭐ " + g.price + ". У вас ⭐ " + wallet + "."),
+      el("button", { class: "okbtn", type: "button", onclick: () => { back.remove(); onYes(); } }, "Купить за ⭐ " + g.price),
+      el("button", { class: "linkbtn", type: "button", onclick: () => back.remove() }, "Отмена")));
+  document.body.append(back);
+}
+
+// витрина полученных подарков: возвращает [заголовок, содержимое]
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }).replace(" г.", "");
+  const time = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return date + " в " + time;
+}
+
+// карточка подарка (всплывающее окно снизу, как в Телеграме)
+function giftSheet(g, sender, own, onChange) {
+  const info = giftById[g.gift_id] || { emoji: "🎁", name: "Подарок" };
+  const close = () => back.remove();
+  const toggle = el("button", { class: "linkbtn", type: "button" });
+  const note = el("p", { class: "sheetnote" });
+  function renderNote() {
+    note.replaceChildren(g.hidden ? "Подарок скрыт из Вашего профиля. " : "Подарок виден в Вашем профиле. ", toggle);
+    toggle.textContent = g.hidden ? "Показать ›" : "Скрыть ›";
+  }
+  toggle.addEventListener("click", async () => {
+    const { error } = await sb.rpc("set_gift_hidden", { p_gift: String(g.id), p_hidden: !g.hidden });
+    if (error) { alert("Не получилось: " + error.message + " (выполнен ли gifts_hide.sql?)"); return; }
+    g.hidden = !g.hidden;
+    renderNote();
+    onChange();
+  });
+  const upBtn = el("button", { class: "bluebig", type: "button" }, "Улучшить · ⭐ 100");
+  upBtn.addEventListener("click", async () => {
+    if (wallet < 100) { alert("Недостаточно звёзд: нужно 100"); return; }
+    upBtn.disabled = true;
+    const { data, error } = await sb.rpc("upgrade_gift", { p_gift: g.id });
+    if (error) { upBtn.disabled = false; alert(error.message); return; }
+    // короткая анимация «рулетки»
+    let i = 0; const t = setInterval(() => {
+      const m = models[Math.floor(Math.random() * models.length)], b = backdrops[Math.floor(Math.random() * backdrops.length)];
+      upBtn.textContent = (m ? m.name : "") + " · " + (b ? b.name : "");
+      if (++i > 12) { clearInterval(t); done(); }
+    }, 90);
+    function done() {
+      Object.assign(g, data);
+      wallet -= 100;
+      close(); onChange();
+      toast("Подарок улучшен и добавлен в профиль · списано ⭐ 100");
+      giftSheet(g, sender, own, onChange);
+    }
+  });
+  const fromVal = el("div", { class: "from" }, avatar(sender || { username: "?" }, "sm"),
+    el("b", {}, sender ? sender.username : "Неизвестно"));
+  if (sender && sender.id !== me.id)
+    fromVal.append(el("button", { class: "tagbtn", type: "button", onclick: () => { close(); giftView(sender); } }, "отправить подарок"));
+  const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "sheet" + (g.model_id ? " up" : ""), style: g.model_id ? "background:" + bgFull(g.backdrop_id, g.pattern) : "" },
+      giftArt(info, g.model_id),
+      el("h2", {}, own ? "Подарок Вам" : "Подарок"),
+      ...(own ? [el("p", { class: "sheetsub" }, "Вы можете скрыть этот подарок из профиля.")] : [el("p", { class: "sheetsub" }, info.name)]),
+      el("div", { class: "gtable" },
+        el("div", {}, el("span", {}, "От"), fromVal),
+        el("div", {}, el("span", {}, "Дата"), el("div", {}, fmtDateTime(g.created_at))),
+        el("div", {}, el("span", {}, "Стоимость"), el("div", {}, el("span", { class: "stars" }, "⭐ " + g.price))),
+        ...(g.number ? [el("div", {}, el("span", {}, "Номер"), el("div", {}, "#" + g.number + (info.supply ? " из " + info.supply : "")))] : []),
+        ...(g.model_id ? [
+          el("div", {}, el("span", {}, "Модель"), el("div", {}, modelById[g.model_id]?.name || "", el("span", { class: "rar" }, rarity(models.filter((x) => x.gift_id === g.gift_id), g.model_id)))),
+          el("div", {}, el("span", {}, "Фон"), el("div", {}, backById[g.backdrop_id]?.name || "", el("span", { class: "rar" }, rarity(backdrops, g.backdrop_id)))),
+          el("div", {}, el("span", {}, "Узор"), el("div", {}, patName(g.pattern)))] : [])),
+      ...(own && info.upgradable && !g.model_id ? [upBtn] : []),
+      ...(own ? [note] : []),
+      el("button", { class: "okbtn", type: "button", onclick: close }, "OK")));
+  if (own) renderNote();
+  document.body.append(back);
+}
+
+// вкладки профиля: Публикации / Архив / Подарки
+function giftsSection(userId, title) {
+  const own = userId === me.id;
+  let gifts = [], senders = new Map(), tab = "gifts";
+  const tabs = el("div", { class: "ptabs" });
+  const body = el("div", { class: "pbody" });
+  const wrap = el("div", {}, tabs, body);
+
+  function stub() { return el("div", { class: "stubmini" }, el("b", {}, "В разработке"), "Этот раздел скоро появится"); }
+
+  function renderTabs() {
+    const visible = gifts.filter((g) => own || !g.hidden);
+    const t = (id, label) => el("button", { class: "ptab" + (tab === id ? " on" : ""), type: "button",
+      onclick: () => { tab = id; renderTabs(); } }, label);
+    tabs.replaceChildren(t("pubs", "Публикации"), t("arch", "Архив публикаций"),
+      t("gifts", "Подарки" + (visible.length ? " · " + visible.length : "")));
+    tabs.scrollLeft = tabs.querySelector(".on").offsetLeft - 16;
+    if (tab !== "gifts") { body.replaceChildren(stub()); return; }
+    if (!visible.length) { body.replaceChildren(el("p", { class: "muted center" }, "Пока нет подарков")); return; }
+    const grid = el("div", { class: "ggrid" }, ...visible.map((g) => {
+      const info = giftById[g.gift_id] || { emoji: "🎁" };
+      const snd = senders.get(g.sender_id);
+      return el("button", { class: "gcard" + (g.hidden ? " dim" : "") + (g.model_id ? " up" : ""), type: "button",
+        style: g.model_id ? "background:" + bgFull(g.backdrop_id, g.pattern) : "",
+        onclick: () => giftSheet(g, snd, own, renderTabs) },
+        el("span", { class: "gsender" }, avatar(snd || { username: "?" }, "sm")),
+        el("span", { class: "gbig" }, giftArt(info, g.model_id)),
+        ...(g.hidden ? [el("span", { class: "ghid" }, "скрыт")] : []));
+    }));
+    body.replaceChildren(
+      el("div", { class: "chips" }, el("span", { class: "chip on" }, "Все подарки")),
+      grid,
+      el("p", { class: "hint" }, "Нажмите на подарок, чтобы посмотреть подробности" + (own ? " или скрыть его из профиля." : ".")));
+  }
+
+  body.replaceChildren(el("p", { class: "muted center" }, "Загрузка…"));
+  renderTabs();
+  sb.from("gifts").select("*").eq("recipient_id", userId)
+    .order("created_at", { ascending: false }).limit(60)
+    .then(async ({ data }) => {
+      gifts = data || [];
+      const ids = [...new Set(gifts.map((g) => g.sender_id))];
+      if (ids.length) {
+        const { data: ps } = await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", ids);
+        senders = new Map((ps || []).map((u) => [u.id, u]));
+      }
+      renderTabs();
+    });
+  return wrap;
+}
+
+// --- общие кусочки профиля (как в Телеграме) ---
+function infoRow(label, value, onclick) {
+  const v = el("div", { class: "iv" }, value);
+  const l = el("div", { class: "il" }, label);
+  const row = el(onclick ? "button" : "div", onclick ? { class: "irow", type: "button" } : { class: "irow" }, v, l);
+  if (onclick) row.addEventListener("click", () => onclick(l, label));
+  return row;
+}
+// строка "Имя пользователя": основной юзернейм + "а также" NFT-юзернеймы (переливаются)
+function usernameRow(u, mine, onEdit) {
+  const v = el("div", { class: "iv" });
+  const l = el("div", { class: "il" }, "Имя пользователя");
+  const row = el("button", { class: "irow", type: "button" }, v, l);
+  const render = (nfts) => {
+    const mainNft = u.handle && nfts.includes(u.handle);
+    v.replaceChildren(u.handle ? el("span", { class: mainNft ? "nft" : "" }, "@" + u.handle)
+      : "Не задан" + (mine ? " — нажми «Изменить»" : ""));
+    const extra = nfts.filter((h) => h !== u.handle);
+    if (extra.length) l.replaceChildren("а также ", ...extra.flatMap((h, i) => [i ? ", " : "", el("span", { class: "nft" }, "@" + h)]));
+    else l.textContent = "Имя пользователя";
+  };
+  render([]);
+  sb.from("nft_usernames").select("handle").eq("owner_id", u.id).order("created_at")
+    .then(({ data }) => { if (data && data.length) render(data.map((r) => r.handle)); });
+  row.addEventListener("click", () => {
+    if (!u.handle && !mine) return;
+    const close = () => back.remove();
+    const item = (icon, title, sub, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+      el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), ...(sub ? [el("small", {}, sub)] : [])));
+    const copy = () => {
+      try { navigator.clipboard.writeText("@" + u.handle); toast("Скопировано: @" + u.handle); }
+      catch { toast("Не удалось скопировать"); }
+    };
+    const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+      el("div", { class: "sheet attach" },
+        ...(u.handle ? [item("📋", "Скопировать", "@" + u.handle, copy)] : []),
+        ...(mine ? [item("✏️", "Изменить", "Поменять юзернейм", () => onEdit && onEdit()),
+                    item("💎", "Превратить в NFT", "Редкие юзернеймы с переливом", nftView)] : [])));
+    document.body.append(back);
+  });
+  return row;
+}
+
+// меню NFT-юзернейма: основной / передать / удалить
+function nftMenu(h) {
+  const close = () => back.remove();
+  const isMain = h === myProfile.handle;
+  const item = (icon, title, sub, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+    el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), ...(sub ? [el("small", {}, sub)] : [])));
+  const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "sheet attach" },
+      el("p", { class: "sheetsub", style: "margin:0 0 6px" }, "@" + h),
+      ...(isMain ? [] : [item("⭐", "Сделать основным", "Показывать в профиле", async () => {
+        const { error } = await sb.rpc("set_main_handle", { p_handle: h });
+        if (error) { alert(error.message); return; }
+        myProfile.handle = h; toast("Основной юзернейм: @" + h); nftView();
+      })]),
+      item("🎁", "Передать", "Отдать другому человеку", () => nftTransferView(h)),
+      item("🗑", "Удалить", "Звёзды не вернутся, юзернейм сможет занять другой", async () => {
+        if (!confirm("Удалить @" + h + "? Звёзды не возвращаются, и этот юзернейм сможет занять другой человек.")) return;
+        const { error } = await sb.rpc("delete_nft_username", { p_handle: h });
+        if (error) { alert(error.message); return; }
+        toast("@" + h + " удалён"); nftView();
+      })));
+  document.body.append(back);
+}
+
+// выбор получателя NFT-юзернейма
+async function nftTransferView(h) {
+  closeChannel();
+  const filter = el("input", { class: "search", placeholder: "🔍 Поиск по людям", autocapitalize: "none", spellcheck: "false" });
+  const box = el("div", { class: "island flush" }, el("p", { class: "muted" }, "Загрузка…"));
+  let people = [];
+  function render() {
+    const q = filter.value.trim().replace(/^@/, "").toLowerCase();
+    const rows = people.filter((u) => !q || u.username.toLowerCase().includes(q) || (u.handle || "").includes(q))
+      .map((u) => personRow(u, u.handle ? "@" + u.handle : "", "", async () => {
+        if (!confirm("Передать @" + h + " человеку " + u.username + "? Отменить это нельзя.")) return;
+        const { error } = await sb.rpc("transfer_nft_username", { p_handle: h, p_to: u.id });
+        if (error) { alert(error.message); return; }
+        toast("@" + h + " передан: " + u.username);
+        nftView();
+      }));
+    box.replaceChildren(...(rows.length ? rows : [el("p", { class: "muted" }, "Никого не найдено")]));
+  }
+  filter.addEventListener("input", render);
+  show(el("header", {}, el("button", { class: "icon", onclick: nftView }, "←"), el("b", {}, "Кому передать @" + h)),
+    el("div", { class: "pscroll" }, el("div", { class: "searchbox" }, filter), box));
+  const { data } = await sb.from("profiles").select("id, username, handle, avatar_url, badge").neq("id", me.id).order("username").limit(200);
+  people = data || [];
+  render();
+}
+
+// --- NFT-юзернеймы ---
+async function nftView() {
+  closeChannel();
+  show(el("header", {}, el("button", { class: "icon", onclick: profileView }, "←"), el("b", {}, "NFT-юзернеймы")),
+    el("div", { class: "pscroll" }, el("p", { class: "muted center" }, "Загрузка…")));
+  const { data } = await sb.from("nft_usernames").select("handle").eq("owner_id", me.id).order("created_at");
+  const mine = (data || []).map((r) => r.handle);
+  const mainIsNft = myProfile.handle && mine.includes(myProfile.handle);
+
+  const claimBox = (title, sub, min, price) => {
+    const inp = el("input", { placeholder: "от " + min + " до 32 символов", maxlength: "32", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
+    const btn = el("button", { type: "button" }, "Превратить в NFT · ⭐ " + price);
+    btn.addEventListener("click", async () => {
+      const h = normHandle(inp.value);
+      if (!new RegExp("^[a-z0-9_]{" + min + ",32}$").test(h)) { alert("Юзернейм: от " + min + " до 32 символов, только латиница a-z, цифры и _"); return; }
+      btn.disabled = true;
+      const { error } = await sb.rpc("claim_nft_username", { p_handle: h, p_min: min });
+      btn.disabled = false;
+      if (error) { alert(error.message); return; }
+      await loadWalletAndCatalog();
+      toast("Списано ⭐ " + price + " · @" + h + " теперь твой NFT");
+      nftView();
+    });
+    return el("div", { class: "island pad" }, el("b", { class: "nfttitle" }, title), el("p", { class: "hint", style: "margin:0;text-align:left" }, sub), inp, btn);
+  };
+
+  const convertBtn = el("button", { type: "button" }, mainIsNft ? "Уже NFT" : "Превратить свой · ⭐ 500");
+  convertBtn.disabled = !myProfile.handle || mainIsNft;
+  convertBtn.addEventListener("click", async () => {
+    convertBtn.disabled = true;
+    const { error } = await sb.rpc("convert_handle_to_nft");
+    if (error) { alert(error.message); convertBtn.disabled = false; return; }
+    await loadWalletAndCatalog();
+    toast("Списано ⭐ 500 · @" + myProfile.handle + " теперь NFT");
+    nftView();
+  });
+
+  show(
+    el("header", {}, el("button", { class: "icon", onclick: profileView }, "←"), el("b", {}, "NFT-юзернеймы")),
+    el("div", { class: "pscroll" },
+      el("p", { class: "hint" }, "NFT-юзернейм переливается в профиле. Звёзды списываются сразу, без подтверждения."),
+      el("div", { class: "balance", style: "margin:0 16px" }, el("span", { class: "stars" }, "⭐ " + wallet), el("span", {}, "на счёте")),
+      claimBox("4-значный и больше", "Короткие редкие юзернеймы: от 4 до 32 символов. Цена ⭐ 1000", 4, 1000),
+      claimBox("5-значный и больше", "Любой юзернейм от 5 до 32 символов. Цена ⭐ 500", 5, 500),
+      el("div", { class: "island pad" },
+        el("b", { class: "nfttitle" }, "Твой текущий юзернейм"),
+        el("div", { class: "iv" }, myProfile.handle ? el("span", { class: mainIsNft ? "nft" : "" }, "@" + myProfile.handle) : "Не задан — задай в профиле"),
+        convertBtn),
+      ...(mine.length ? [el("div", { class: "island pad" }, el("b", { class: "nfttitle" }, "Мои NFT-юзернеймы"),
+        el("p", { class: "hint", style: "margin:0;text-align:left" }, "Нажми на юзернейм: сделать основным, передать или удалить"),
+        ...mine.map((h) => el("button", { class: "typeopt" + (h === myProfile.handle ? " on" : ""), type: "button",
+          onclick: () => nftMenu(h) }, el("b", {}, el("span", { class: "nft" }, "@" + h), h === myProfile.handle ? "  · основной" : ""))))] : []),
+      el("div", { style: "height:16px" })));
+}
+
+function action(icon, label, fn) {
+  return el("button", { class: "act", type: "button", onclick: fn }, el("span", { class: "ai" }, icon), el("span", {}, label));
+}
+function copyHandle(handle) {
+  return (l, label) => {
+    try { navigator.clipboard.writeText("@" + handle); l.textContent = "Скопировано ✓"; }
+    catch { l.textContent = "Не удалось скопировать"; }
+    setTimeout(() => { l.textContent = label; }, 1500);
+  };
+}
+
+// --- юзернеймы ---
+const HANDLE_RE = /^[a-z0-9_]{5,32}$/;
+const HANDLE_DOMAIN = "@smartgram.app"; // служебный адрес: пользователю email не нужен
+const normHandle = (v) => v.trim().replace(/^@/, "").toLowerCase();
+const handleError = (h) => HANDLE_RE.test(h) ? null :
+  "Юзернейм: от 5 до 32 символов, только латиница a-z, цифры и _";
+
+// --- экран входа / регистрации ---
+function authView() {
+  closeChannel();
+  let signup = false;
+  const err = el("p", { class: "err" });
+  const name = el("input", { placeholder: "Ник (как тебя видят друзья)", maxlength: "30", autocomplete: "nickname" });
+  const login = el("input", { placeholder: "Юзернейм", autocapitalize: "none", autocorrect: "off", spellcheck: "false", autocomplete: "username" });
+  const pass = el("input", { type: "password", placeholder: "Пароль (от 6 символов)", autocomplete: "current-password" });
+  const pass2 = el("input", { type: "password", placeholder: "Повтори пароль", autocomplete: "new-password" });
+  const btn = el("button", {});
+  const toggle = el("button", { class: "ghost", type: "button" });
+
+  function render() {
+    name.style.display = signup ? "" : "none";
+    pass2.style.display = signup ? "" : "none";
+    login.placeholder = signup ? "Юзернейм (от 5 символов, a-z 0-9 _)" : "Юзернейм (или email)";
+    btn.textContent = signup ? "Зарегистрироваться" : "Войти";
+    toggle.textContent = signup ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Регистрация";
+    err.textContent = "";
+  }
+  toggle.addEventListener("click", () => { signup = !signup; render(); });
+
+  btn.addEventListener("click", async () => {
+    err.textContent = "";
+    btn.disabled = true;
+    try {
+      if (signup) {
+        const nick = name.value.trim();
+        const handle = normHandle(login.value);
+        if (nick.length < 2) throw new Error("Ник должен быть от 2 символов");
+        const he = handleError(handle);
+        if (he) throw new Error(he);
+        if (pass.value.length < 6) throw new Error("Пароль должен быть от 6 символов");
+        if (pass.value !== pass2.value) throw new Error("Пароли не совпадают");
+        const { data: free, error: ce } = await sb.rpc("handle_available", { h: handle });
+        if (ce) throw ce;
+        if (!free) throw new Error("Этот юзернейм уже занят");
+        const { data, error } = await sb.auth.signUp({
+          email: handle + HANDLE_DOMAIN,
+          password: pass.value,
+          options: { data: { username: nick, handle } },
+        });
+        if (error) throw error;
+        if (!data.session) throw new Error("Не удалось войти сразу после регистрации. Попробуй войти.");
+      } else {
+        const v = login.value.trim();
+        const email = v.includes("@") && !v.startsWith("@") ? v : normHandle(v) + HANDLE_DOMAIN;
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass.value });
+        if (error) throw new Error(error.message === "Invalid login credentials" ? "Неверный юзернейм или пароль" : error.message);
+      }
+    } catch (e) {
+      err.textContent = e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  show(el("div", { class: "auth" }, el("h1", {}, APP_NAME), name, login, pass, pass2, err, btn, toggle));
+  render();
+}
+
+// --- нижнее меню (как в Телеграме) ---
+function tabBar(active) {
+  const t = (id, icon, label, fn) =>
+    el("button", { class: "tab" + (id === active ? " on" : ""), type: "button", onclick: fn },
+      el("span", { class: "ti" }, icon), el("span", {}, label));
+  return el("nav", { class: "tabbar" },
+    t("chats", "💬", "Чаты", listView),
+    t("contacts", "👥", "Контакты", contactsView),
+    t("settings", "⚙️", "Настройки", settingsView),
+    t("profile", avatar(myProfile, "sm"), "Профиль", profileView));
+}
+
+function stubView(active, title) {
+  closeChannel();
+  show(
+    el("header", {}, el("b", {}, title)),
+    el("div", { class: "stub" }, el("div", {}, el("b", {}, "В разработке"), "Этот раздел скоро появится")),
+    tabBar(active));
+}
+async function contactsView() {
+  closeChannel();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  show(el("header", {}, el("b", {}, "Контакты")), list, tabBar("contacts"));
+  await loadContacts();
+  const ids = [...contacts.keys()];
+  if (!ids.length) {
+    list.replaceChildren(el("p", { class: "muted" }, "Контактов пока нет. Открой профиль человека → ⋮ → «Добавить в контакты»."));
+    return;
+  }
+  const { data, error } = await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", ids);
+  if (error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+  const rows = (data || []).sort((a, b) => dispName(a).localeCompare(dispName(b), "ru"));
+  list.replaceChildren(...rows.map((u) => personRow(u, u.handle ? "@" + u.handle : (u.bio || "").slice(0, 60))));
+}
+
+// меню ⋮ в профиле человека
+function contactMenu(peer) {
+  const isC = contacts.has(peer.id);
+  const close = () => back.remove();
+  const item = (icon, title, fn, danger) => el("button", { class: "mitem" + (danger ? " danger" : ""), type: "button",
+    onclick: () => { close(); fn(); } }, el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title)));
+  const back = el("div", { class: "backdrop clear top", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "popmenu" },
+      ...(isC
+        ? [item("✏️", "Переименовать контакт", () => renameContact(peer)), item("🗑", "Удалить контакт", () => removeContact(peer), true)]
+        : [item("👤", "Добавить в контакты", () => addContact(peer))])));
+  document.body.append(back);
+}
+
+async function addContact(peer) {
+  const { error } = await sb.from("contacts").insert({ owner_id: me.id, contact_id: peer.id });
+  if (error) { alert("Не получилось: " + error.message + " (выполнен ли contacts.sql?)"); return; }
+  contacts.set(peer.id, { custom_name: null });
+  toast("Добавлено в контакты");
+  peerProfileView(peer);
+}
+
+async function removeContact(peer) {
+  if (!confirm("Удалить контакт «" + dispName(peer) + "»?")) return;
+  const { error } = await sb.from("contacts").delete().eq("owner_id", me.id).eq("contact_id", peer.id);
+  if (error) { alert("Не получилось: " + error.message); return; }
+  contacts.delete(peer.id);
+  toast("Контакт удалён");
+  peerProfileView(peer);
+}
+
+function renameContact(peer) {
+  const input = el("input", { value: dispName(peer), maxlength: "64", placeholder: "Имя контакта" });
+  const close = () => back.remove();
+  const save = async () => {
+    const v = input.value.trim();
+    const name = !v || v === peer.username ? null : v; // пусто или как ник - вернуть обычное имя
+    const { error } = await sb.from("contacts").update({ custom_name: name }).eq("owner_id", me.id).eq("contact_id", peer.id);
+    if (error) { alert("Не получилось: " + error.message); return; }
+    contacts.set(peer.id, { custom_name: name });
+    close();
+    toast("Сохранено");
+    peerProfileView(peer);
+  };
+  const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "sheet attach" },
+      el("h2", { style: "text-align:center;margin:6px 0 12px" }, "Переименовать контакт"),
+      input,
+      el("p", { class: "hint", style: "margin:8px 0 12px" }, "Это имя видишь только ты. Оставь поле пустым, чтобы вернуть ник."),
+      el("div", { class: "duo" }, el("button", { class: "ghost", type: "button", onclick: close }, "Отмена"),
+        el("button", { type: "button", onclick: save }, "Сохранить"))));
+  document.body.append(back);
+  input.focus(); input.select();
+}
+function settingsView() {
+  closeChannel();
+  const canAdmin = myProfile && (myProfile.is_admin || myProfile.is_owner);
+  show(
+    el("header", {}, el("b", {}, "Настройки")),
+    el("div", { class: "pscroll" },
+      ...(canAdmin ? [el("div", { class: "island flush" },
+        el("button", { class: "row", type: "button", onclick: () => adminView() },
+          el("span", { class: "mi" }, "🛡"), el("span", { class: "rowtxt" }, el("b", {}, "Админ-панель"), el("small", {}, "Пользователи, звёзды, блокировки"))))] : []),
+      el("div", { class: "stubmini" }, el("b", {}, "В разработке"), "Остальные настройки скоро появятся"),
+      el("p", { class: "hint center" }, APP_NAME + " · версия " + BUILD)),
+    tabBar("settings"));
+}
+
+// --- админ-панель ---
+const fmtDate = (iso) => new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+const frozenNow = (u) => u.frozen_until && new Date(u.frozen_until) > new Date();
+
+async function adminView() {
+  closeChannel();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  const search = el("input", { class: "search", placeholder: "🔍 Поиск по нику или @юзернейму", autocapitalize: "none", spellcheck: "false" });
+  const total = el("p", { class: "hint", style: "margin:8px 16px" });
+  show(el("header", {}, el("button", { class: "icon", onclick: settingsView }, "←"), el("b", {}, "Админ-панель")),
+    el("div", { class: "searchbox" }, search), total, list);
+  let seq = 0;
+  async function load() {
+    const my = ++seq;
+    const q = search.value.trim().replace(/^@/, "");
+    const { data, error } = await sb.rpc("admin_list_users", { p_search: q || null, p_id: null });
+    if (my !== seq) return;
+    if (error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+    total.textContent = "Пользователей: " + data.length + " (новые сверху)";
+    list.replaceChildren(...(data.length ? data.map((u) => {
+      const flags = (u.banned ? " · 🚫 заблокирован" : "") + (frozenNow(u) ? " · ❄️ заморожен" : "") +
+        (u.is_owner ? " · владелец" : u.is_admin ? " · админ" : "");
+      return personRow(u, (u.handle ? "@" + u.handle + " · " : "") + "рег. " + fmtDate(u.created_at) + flags,
+        "⭐ " + u.stars, () => adminUserView(u));
+    }) : [el("p", { class: "muted" }, "Никого не найдено")]));
+  }
+  let t;
+  search.addEventListener("input", () => { clearTimeout(t); t = setTimeout(load, 250); });
+  load();
+}
+
+function adminGiveGift(u) {
+  let gift = catalog[0] ? catalog[0].id : null, up = false, model = null, bd = null, pat = "messenger";
+  const body = el("div", { class: "island pad" });
+  function render() {
+    const g = giftById[gift];
+    const sel = el("select", { class: "sel" }, ...catalog.map((c) => el("option", { value: c.id, ...(c.id === gift ? { selected: "" } : {}) }, c.name + " · ⭐ " + c.price)));
+    sel.addEventListener("change", () => { gift = sel.value; up = false; model = bd = null; render(); });
+    const parts = [el("p", { class: "label" }, "Какой подарок?"), sel];
+    if (g && g.upgradable) {
+      const cb = el("input", { type: "checkbox", ...(up ? { checked: "" } : {}) });
+      cb.addEventListener("change", () => { up = cb.checked; render(); });
+      parts.push(el("label", { class: "label", style: "display:flex;gap:8px;align-items:center;margin-top:12px" }, cb, "Сразу улучшенный"));
+      if (up) {
+        parts.push(el("p", { class: "label" }, "Какой фон?"),
+          el("div", { class: "pick" }, ...backdrops.map((b) => el("button", { type: "button", class: bd === b.id ? "on" : "", onclick: () => { bd = b.id; render(); } },
+            el("span", { class: "sw", style: "background:" + bdStyle(b.id) }), b.name, el("span", { class: "rar" }, rarity(backdrops, b.id))))),
+          el("p", { class: "label" }, "Какой узор?"),
+          el("div", { class: "pick" }, ...PATTERNS.map(([id, nm, ch]) => el("button", { type: "button", class: pat === id ? "on" : "", onclick: () => { pat = id; render(); } },
+            el("span", { style: "width:26px;display:inline-block;text-align:center;margin-right:8px" }, ch || "M"), nm))),
+          el("p", { class: "label" }, "Какую модель выбрать?"),
+          el("div", { class: "pick" }, ...models.filter((m) => m.gift_id === gift).map((m) => el("button", { type: "button", class: model === m.id ? "on" : "", onclick: () => { model = m.id; render(); } },
+            el("span", { style: "font-size:30px;margin-right:10px" }, giftArt(g, m.id)), m.name, el("span", { class: "rar" }, rarity(models.filter((x) => x.gift_id === gift), m.id))))));
+      }
+    }
+    parts.push(el("button", { type: "button", style: "margin-top:12px", onclick: async () => {
+      if (up && (!model || !bd)) { alert("Выбери и фон, и модель"); return; }
+      const { error } = await sb.rpc("admin_give_gift", { p_user: u.id, p_gift: gift, p_model: up ? model : null, p_backdrop: up ? bd : null, p_pattern: up ? pat : null });
+      if (error) { alert(error.message + " (выполнены ли gifts_v2.sql и gifts_v3.sql?)"); return; }
+      toast("Подарок выдан: " + u.username);
+      adminUserView(u);
+    } }, "Выдать"));
+    body.replaceChildren(...parts);
+  }
+  render();
+  show(el("header", { class: "bare" }, el("button", { class: "icon", onclick: () => adminUserView(u) }, "←")),
+    el("div", { class: "pscroll" }, el("div", { class: "hero" }, avatar(u, "big"), el("h2", {}, nameWithBadge(u, 22))), body));
+}
+
+async function adminUserView(u) {
+  closeChannel();
+  const iAmOwner = !!myProfile.is_owner;
+  const call = async (fn, args) => {
+    const { error } = await sb.rpc(fn, args);
+    if (error) { alert(error.message); return false; }
+    const { data } = await sb.rpc("admin_list_users", { p_search: null, p_id: u.id });
+    if (data && data[0]) u = data[0];
+    adminUserView(u);
+    return true;
+  };
+  const manageable = !u.is_owner && u.id !== me.id && (iAmOwner || !u.is_admin);
+
+  const amount = el("input", { type: "number", inputmode: "numeric", min: "1", placeholder: "Количество звёзд" });
+  const starsBox = el("div", { class: "island pad" },
+    el("p", { class: "label" }, "Звёзды на счёте: ⭐ " + u.stars), amount,
+    el("div", { class: "duo" },
+      el("button", { type: "button", onclick: () => { const n = parseInt(amount.value, 10); if (!(n > 0)) { alert("Введи число больше нуля"); return; } call("admin_adjust_stars", { p_user: u.id, p_delta: n }); } }, "Выдать ⭐"),
+      el("button", { class: "warn", type: "button", onclick: () => { const n = parseInt(amount.value, 10); if (!(n > 0)) { alert("Введи число больше нуля"); return; } call("admin_adjust_stars", { p_user: u.id, p_delta: -n }); } }, "Забрать ⭐")));
+
+  const status = u.banned ? "🚫 Заблокирован" : frozenNow(u) ? "❄️ Заморожен до " + fmtDateTime(u.frozen_until) : "✅ Активен";
+  const info = el("div", { class: "island" },
+    infoRow("Регистрация", fmtDateTime(u.created_at)),
+    infoRow("Статус", status),
+    infoRow("Роль", u.is_owner ? "Владелец" : u.is_admin ? "Админ-панель выдана" : "Обычный пользователь"));
+
+  const blocks = [];
+  if (manageable) {
+    blocks.push(el("div", { class: "island pad" },
+      el("p", { class: "label" }, "Блокировка"),
+      u.banned
+        ? el("button", { type: "button", onclick: () => call("admin_set_ban", { p_user: u.id, p_banned: false }) }, "Разблокировать")
+        : el("button", { class: "warn", type: "button", onclick: () => { if (confirm("Заблокировать " + u.username + "?")) call("admin_set_ban", { p_user: u.id, p_banned: true }); } }, "Заблокировать")));
+
+    const dur = el("select", { class: "sel" },
+      ...[["60", "1 час"], ["360", "6 часов"], ["1440", "1 день"], ["4320", "3 дня"], ["10080", "7 дней"], ["43200", "30 дней"], ["custom", "Свой срок…"]]
+        .map(([v, t]) => el("option", { value: v }, t)));
+    const custom = el("input", { type: "number", inputmode: "numeric", min: "1", placeholder: "Сколько дней", style: "display:none" });
+    dur.addEventListener("change", () => { custom.style.display = dur.value === "custom" ? "" : "none"; });
+    blocks.push(el("div", { class: "island pad" },
+      el("p", { class: "label" }, "Заморозка"),
+      ...(frozenNow(u) ? [el("button", { type: "button", onclick: () => call("admin_set_freeze", { p_user: u.id, p_until: null }) }, "Разморозить")] : [
+        dur, custom,
+        el("button", { class: "warn", type: "button", onclick: () => {
+          let mins = dur.value === "custom" ? parseInt(custom.value, 10) * 1440 : parseInt(dur.value, 10);
+          if (!(mins > 0)) { alert("Укажи срок"); return; }
+          call("admin_set_freeze", { p_user: u.id, p_until: new Date(Date.now() + mins * 60000).toISOString() });
+        } }, "❄️ Заморозить")])));
+  } else {
+    blocks.push(el("p", { class: "hint" }, "Блокировать и замораживать этот аккаунт нельзя"));
+  }
+
+  if (iAmOwner) {
+    const opts = [[null, "Нет значка"], ["official", "Официальный аккаунт (синяя галочка)"], ["support", "Поддержка (синий значок слева от ника)"], ["org", "Верификация организацией «SmartGram»"], ["hold", "Верификация организацией «Hold»"], ["major", "Верификация организацией «Major»"],
+      ["dev", "Разработчик SmartGram"], ["admin", "Admin SmartGram"]];
+    blocks.push(el("div", { class: "island pad" }, el("p", { class: "label" }, "Значок рядом с ником"),
+      ...opts.map(([v, t]) => el("button", { class: "typeopt" + ((u.badge || null) === v ? " on" : ""), type: "button",
+        onclick: () => call("admin_set_badge", { p_user: u.id, p_badge: v }) },
+        el("b", {}, ...(v ? [badgeIcon(v, 16), " "] : []), t)))));
+    if (!u.is_owner) blocks.push(el("div", { class: "island pad" }, el("p", { class: "label" }, "Доступ в админ-панель"),
+      u.is_admin
+        ? el("button", { class: "warn", type: "button", onclick: () => call("admin_set_admin", { p_user: u.id, p_admin: false }) }, "Забрать доступ")
+        : el("button", { type: "button", onclick: () => { if (confirm("Выдать " + u.username + " доступ в админ-панель?")) call("admin_set_admin", { p_user: u.id, p_admin: true }); } }, "Выдать доступ")));
+  }
+
+  blocks.push(el("div", { class: "island pad" }, el("p", { class: "label" }, "Подарки"),
+    el("button", { type: "button", onclick: () => adminGiveGift(u) }, "🎁 Выдать подарок")));
+
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: adminView }, "←")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(u, "big"), el("h2", {}, nameWithBadge(u, 22)),
+        el("div", { class: "sub" }, u.handle ? "@" + u.handle : "без юзернейма")),
+      info, starsBox, ...blocks));
+}
+
+// --- экран для заблокированного / замороженного аккаунта ---
+function lockedView() {
+  closeChannel();
+  const banned = myProfile.banned;
+  show(el("div", { class: "auth" },
+    el("h1", {}, banned ? "🚫 Аккаунт заблокирован" : "❄️ Аккаунт заморожен"),
+    el("p", { class: "muted", style: "padding:0" }, banned
+      ? "Администратор заблокировал этот аккаунт."
+      : "Аккаунт заморожен до " + fmtDateTime(myProfile.frozen_until) + ". После этого времени всё заработает снова."),
+    el("button", { type: "button", onclick: () => sb.auth.signOut() }, "Выйти из аккаунта")));
+}
+
+// --- чаты (диалоги, группы, каналы) + поиск ---
+function shortTime(iso) {
+  const d = new Date(iso), now = new Date();
+  if (d.toDateString() === now.toDateString())
+    return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+}
+
+function plural(n, f) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  return n + " " + (a > 10 && a < 20 ? f[2] : b > 1 && b < 5 ? f[1] : b === 1 ? f[0] : f[2]);
+}
+const membersText = (c, n) => c.kind === "channel"
+  ? plural(n, ["подписчик", "подписчика", "подписчиков"])
+  : plural(n, ["участник", "участника", "участников"]);
+const chatAsPerson = (c) => ({ username: c.title, avatar_url: c.avatar_url });
+
+function personRow(u, sub, time, onclick, unread) {
+  return el("button", { class: "row", onclick: onclick || (() => chatView(u)) },
+    avatar(u),
+    el("span", { class: "rowtxt" },
+      el("span", { class: "rowtop" }, el("b", {}, nameWithBadge(u, 15)), ...(time ? [el("small", { class: unread ? "new" : "" }, time)] : [])),
+      el("span", { class: "rowbot" }, el("small", { class: "rowsub" }, sub || "\u00a0"),
+        ...(unread ? [el("span", { class: "ub" }, unread > 99 ? "99+" : String(unread))] : []))));
+}
+
+// открыть чат: участнику - переписку, остальным - карточку со "Вступить"
+async function openChat(chat) {
+  const { data } = await sb.from("chat_members").select("role").eq("chat_id", chat.id).eq("user_id", me.id).maybeSingle();
+  data ? chatView(chat) : chatInfoView(chat);
+}
+
+function createMenu() {
+  const close = () => back.remove();
+  const item = (icon, title, sub, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+    el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), el("small", {}, sub)));
+  const back = el("div", { class: "backdrop clear", onclick: (e) => { if (e.target === back) close(); } },
+    el("div", { class: "fabmenu" },
+      item("👥", "Создать группу", "Общий чат для друзей", () => createChatView("group")),
+      item("📣", "Создать канал", "Только вы публикуете", () => createChatView("channel"))));
+  document.body.append(back);
+}
+
+async function listView() {
+  closeChannel();
+  loadLocalRead();
+  const list = el("div", { class: "list" }, el("p", { class: "muted" }, "Загрузка…"));
+  const search = el("input", { class: "search", placeholder: "🔍 Поиск по @юзернейму или нику", autocapitalize: "none", spellcheck: "false" });
+  const fab = el("button", { class: "fab", type: "button", onclick: createMenu, "aria-label": "Создать" }, "✏️");
+  show(el("header", {}, el("b", { class: "brand" }, APP_NAME)),
+    el("div", { class: "searchbox" }, search), list, tabBar("chats"), fab);
+
+  let seq = 0;
+  async function loadDialogs() {
+    const my = ++seq;
+    const [mr, cm, rd] = await Promise.all([
+      sb.from("messages").select("sender_id, recipient_id, chat_id, body, gift_id, media_type, created_at")
+        .order("created_at", { ascending: false }).limit(500),
+      sb.from("chat_members").select("chat_id").eq("user_id", me.id),
+      sb.from("chat_reads").select("key, last_read").eq("user_id", me.id),
+    ]);
+    if (my !== seq) return;
+    if (mr.error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + mr.error.message)); return; }
+    const last = new Map(), unread = new Map();
+    const reads = new Map((rd.data || []).map((r) => [r.key, r.last_read]));
+    for (const m of mr.data) {
+      const key = m.chat_id ? "c:" + m.chat_id : "u:" + (m.sender_id === me.id ? m.recipient_id : m.sender_id);
+      if (!last.has(key)) last.set(key, m);
+      const seenMs = Math.max(reads.has(key) ? Date.parse(reads.get(key)) : 0, localRead.get(key) || 0);
+      if (m.sender_id !== me.id && Date.parse(m.created_at) > seenMs) unread.set(key, (unread.get(key) || 0) + 1);
+    }
+    const favKey = "u:" + me.id;
+    if (!last.has(favKey)) last.set(favKey, null);
+    for (const r of cm.data || []) if (!last.has("c:" + r.chat_id)) last.set("c:" + r.chat_id, null);
+    if (!last.size) {
+      list.replaceChildren(el("p", { class: "muted" }, "Чатов пока нет. Найди друга через поиск по @юзернейму или нажми ✏️, чтобы создать группу."));
+      return;
+    }
+    const chatIds = [], userIds = new Set();
+    for (const [k, m] of last) {
+      if (k[0] === "c") { chatIds.push(k.slice(2)); if (m && m.sender_id !== me.id) userIds.add(m.sender_id); }
+      else userIds.add(k.slice(2));
+    }
+    const [cr, pr] = await Promise.all([
+      chatIds.length ? sb.from("chats").select("*").in("id", chatIds) : { data: [] },
+      userIds.size ? sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", [...userIds]) : { data: [] },
+    ]);
+    if (my !== seq) return;
+    const chatById = new Map((cr.data || []).map((c) => [c.id, c]));
+    const profById = new Map((pr.data || []).map((u) => [u.id, u]));
+    const rows = [];
+    for (const [k, m] of last) {
+      const text = m ? (m.gift_id ? "🎁 Подарок" : m.media_type ? mediaLabel(m) : m.body) : "";
+      if (k === favKey) {
+        rows.push({ ts: m ? m.created_at : "", node: personRow(FAV(), m ? text : "Сохраняйте здесь сообщения и подарки", m ? shortTime(m.created_at) : "") });
+        continue;
+      }
+      if (k[0] === "c") {
+        const c = chatById.get(k.slice(2));
+        if (!c) continue;
+        const who = m && c.kind === "group" ? (m.sender_id === me.id ? "Вы" : (profById.get(m.sender_id)?.username || "?")) + ": " : "";
+        rows.push({ ts: m ? m.created_at : c.created_at,
+          node: personRow(chatAsPerson(c), m ? who + text : "Нет сообщений", m ? shortTime(m.created_at) : "", () => chatView(c), unread.get(k)) });
+      } else {
+        const u = profById.get(k.slice(2));
+        if (!u) continue;
+        rows.push({ ts: m.created_at, node: personRow(u, (m.sender_id === me.id ? "Вы: " : "") + text, shortTime(m.created_at), null, unread.get(k)) });
+      }
+    }
+    rows.sort((x, y) => (x.ts < y.ts ? 1 : -1));
+    list.replaceChildren(...rows.map((r) => r.node));
+  }
+
+  async function loadSearch(q) {
+    const my = ++seq;
+    const esc = q.replace(/[,()]/g, "").replace(/[\\%_]/g, (c) => "\\" + c);
+    if (!esc) { list.replaceChildren(el("p", { class: "muted" }, "Никого не найдено")); return; }
+    const [pr, cr] = await Promise.all([
+      sb.from("profiles").select("id, username, handle, bio, avatar_url, badge")
+        .neq("id", me.id).or(`handle.ilike.%${esc}%,username.ilike.%${esc}%`).order("username").limit(50),
+      sb.from("chats").select("*").or(`handle.ilike.%${esc}%,title.ilike.%${esc}%`).order("title").limit(20),
+    ]);
+    if (my !== seq) return;
+    if (pr.error) { list.replaceChildren(el("p", { class: "muted" }, "Ошибка: " + pr.error.message)); return; }
+    const out = [
+      ...(cr.data || []).map((c) => personRow(chatAsPerson(c),
+        (c.kind === "channel" ? "Канал" : "Группа") + (c.handle ? " · @" + c.handle : ""), "", () => openChat(c))),
+      ...pr.data.map((u) => personRow(u, u.handle ? "@" + u.handle : (u.bio || "").slice(0, 60))),
+    ];
+    list.replaceChildren(...(out.length ? out : [el("p", { class: "muted" }, "Ничего не найдено")]));
+  }
+
+  let t;
+  const run = () => {
+    const q = search.value.trim().replace(/^@/, "");
+    q ? loadSearch(q) : loadDialogs();
+  };
+  search.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 250); });
+  loadDialogs();
+  refreshList = () => { if (!search.value.trim()) loadDialogs(); };
+  let rt;
+  channel = sb.channel("list-" + me.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
+      if (search.value.trim()) return;
+      clearTimeout(rt); rt = setTimeout(loadDialogs, 300);
+    }).subscribe();
+}
+
+// --- создание группы / канала ---
+async function createChatView(kind) {
+  closeChannel();
+  const isCh = kind === "channel";
+  let avatarBlob = null, isPublic = false;
+  const selected = new Set();
+  let people = [];
+  const err = el("p", { class: "err" });
+  const nameInput = el("input", { placeholder: isCh ? "Название канала" : "Название группы", maxlength: "64" });
+  const descInput = el("textarea", { rows: "2", maxlength: "255", placeholder: "Описание (необязательно)" });
+  const handleInput = el("input", { placeholder: "Юзернейм, например my_channel", maxlength: "32", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
+  const fileInput = el("input", { type: "file", accept: "image/*", style: "display:none" });
+  const avBox = el("button", { class: "avpick", type: "button", onclick: () => fileInput.click() }, "📷");
+  const createBtn = el("button", { type: "button" }, isCh ? "Создать канал" : "Создать группу");
+  const peopleBox = el("div", { class: "island flush" }, el("p", { class: "muted" }, "Загрузка…"));
+  const filter = el("input", { class: "search", placeholder: "🔍 Поиск по людям", autocapitalize: "none", spellcheck: "false" });
+  const counter = el("span", {});
+
+  fileInput.addEventListener("change", async () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    try {
+      avatarBlob = await resizeToSquare(f);
+      avBox.replaceChildren(el("img", { src: URL.createObjectURL(avatarBlob), alt: "" }));
+    } catch (e) { err.textContent = e.message; }
+    fileInput.value = "";
+  });
+
+  const optPublic = el("button", { type: "button", class: "typeopt" }, el("b", {}, "Публичный"), el("small", {}, "Находится через поиск, вступить может любой"));
+  const optPrivate = el("button", { type: "button", class: "typeopt on" }, el("b", {}, "Частный"), el("small", {}, "Только те, кого ты добавишь"));
+  const linkBox = el("div", { class: "linkbox", style: "display:none" }, el("p", { class: "label" }, "Юзернейм (от 5 символов: a-z, цифры, _)"), handleInput);
+  function setType(pub) {
+    isPublic = pub;
+    optPublic.classList.toggle("on", pub);
+    optPrivate.classList.toggle("on", !pub);
+    linkBox.style.display = pub ? "" : "none";
+  }
+  optPublic.addEventListener("click", () => setType(true));
+  optPrivate.addEventListener("click", () => setType(false));
+
+  function renderPeople() {
+    const q = filter.value.trim().replace(/^@/, "").toLowerCase();
+    const rows = people
+      .filter((u) => !q || u.username.toLowerCase().includes(q) || (u.handle || "").includes(q))
+      .map((u) => el("button", { class: "row" + (selected.has(u.id) ? " sel" : ""), type: "button",
+        onclick: () => { selected.has(u.id) ? selected.delete(u.id) : selected.add(u.id); renderPeople(); } },
+        avatar(u, "sm"),
+        el("span", { class: "rowtxt" }, el("b", {}, u.username), ...(u.handle ? [el("small", {}, "@" + u.handle)] : [])),
+        el("span", { class: "chk" }, selected.has(u.id) ? "✓" : "")));
+    peopleBox.replaceChildren(...(rows.length ? rows : [el("p", { class: "muted" }, "Никого не найдено")]));
+    counter.textContent = selected.size ? " · выбрано " + selected.size : "";
+  }
+  filter.addEventListener("input", renderPeople);
+
+  createBtn.addEventListener("click", async () => {
+    const title = nameInput.value.trim();
+    if (!title) { err.textContent = "Введи название"; return; }
+    let handle = null;
+    if (isPublic) {
+      handle = normHandle(handleInput.value);
+      const he = handleError(handle);
+      if (he) { err.textContent = "Ссылка: от 5 до 32 символов, только латиница a-z, цифры и _"; return; }
+    }
+    err.textContent = "";
+    createBtn.disabled = true;
+    try {
+      let url = null;
+      if (avatarBlob) {
+        const path = `${me.id}/chat-${Date.now()}.jpg`;
+        const { error: ue } = await sb.storage.from("avatars").upload(path, avatarBlob, { contentType: "image/jpeg" });
+        if (ue) throw ue;
+        url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      }
+      const { data, error } = await sb.rpc("create_chat", {
+        p_kind: kind, p_title: title, p_description: descInput.value.trim() || null, p_avatar: url,
+        p_public: isPublic, p_handle: handle, p_members: [...selected],
+      });
+      if (error) throw error;
+      chatView(data);
+    } catch (e) {
+      err.textContent = e.code === "23505" ? "Эта ссылка уже занята" : e.message;
+    } finally {
+      createBtn.disabled = false;
+    }
+  });
+
+  show(
+    el("header", {}, el("button", { class: "icon", onclick: listView }, "←"), el("b", {}, isCh ? "Новый канал" : "Новая группа")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "island pad" },
+        el("div", { class: "namerow" }, avBox, nameInput), descInput),
+      el("div", { class: "island pad" }, el("p", { class: "label" }, isCh ? "Тип канала" : "Тип группы"), optPrivate, optPublic, linkBox),
+      el("div", { class: "island pad" }, el("p", { class: "label" }, el("span", {}, isCh ? "Подписчики" : "Участники"), counter), filter),
+      peopleBox, fileInput),
+    el("div", { class: "footbar" }, err, createBtn)
+  );
+
+  const { data } = await sb.from("profiles").select("id, username, handle, avatar_url, badge").neq("id", me.id).order("username").limit(200);
+  people = data || [];
+  renderPeople();
+}
+
+// --- карточка группы / канала ---
+async function chatInfoView(chat) {
+  closeChannel();
+  show(el("header", { class: "bare" }, el("button", { class: "icon", onclick: listView }, "←")),
+    el("div", { class: "pscroll" }, el("p", { class: "muted center" }, "Загрузка…")));
+  const [mr, cr] = await Promise.all([
+    sb.from("chat_members").select("user_id, role").eq("chat_id", chat.id).limit(500),
+    sb.from("chats").select("*").eq("id", chat.id).single(),
+  ]);
+  if (cr.data) chat = cr.data;
+  const members = mr.data || [];
+  const ids = members.map((m) => m.user_id);
+  const { data: ps } = ids.length ? await sb.from("profiles").select("id, username, handle, bio, avatar_url, badge").in("id", ids) : { data: [] };
+  const byId = new Map((ps || []).map((u) => [u.id, u]));
+  const mine = members.find((m) => m.user_id === me.id);
+  const canLeave = mine && !chat.is_default && mine.role !== "owner";
+  const isCh = chat.kind === "channel";
+  const roleName = { owner: "владелец", admin: "админ" };
+
+  const actions = el("div", { class: "actions" });
+  if (mine) {
+    actions.append(action("💬", "Открыть", () => chatView(chat)));
+    if (canLeave) actions.append(action("🚪", "Выйти", async () => {
+      if (!confirm("Выйти из «" + chat.title + "»?")) return;
+      const { error } = await sb.rpc("leave_chat", { p_chat: chat.id });
+      if (error) alert(error.message); else listView();
+    }));
+  } else {
+    actions.append(action("➕", isCh ? "Подписаться" : "Вступить", async () => {
+      const { error } = await sb.rpc("join_chat", { p_chat: chat.id });
+      if (error) alert(error.message); else chatView(chat);
+    }));
+  }
+
+  const info = el("div", { class: "island" },
+    infoRow("Описание", chat.description || "Пока ничего не написано"),
+    infoRow("Тип", (isCh ? "Канал" : "Группа") + (chat.is_public ? " · публичный" : " · частный")),
+    infoRow("Лимит", isCh ? "до 1 000 000 подписчиков" : "до 100 000 участников"),
+    chatHandleRow(chat, mine && mine.role === "owner", (c) => chatInfoView(c)),
+    ...(chat.is_default ? [infoRow("Важно", "Из этого чата выйти нельзя")] : []));
+
+  const list = el("div", { class: "island flush" }, ...members.filter((m) => byId.has(m.user_id)).map((m) => {
+    const u = byId.get(m.user_id);
+    return personRow(u, (roleName[m.role] || "") || (u.handle ? "@" + u.handle : ""), "",
+      m.user_id === me.id ? () => profileView() : () => peerProfileView(u));
+  }));
+
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: listView }, "←")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(chatAsPerson(chat), "big"), el("h2", {}, chat.title),
+        el("div", { class: "sub" }, membersText(chat, members.length))),
+      actions, info,
+      el("div", { class: "ptabs" }, el("span", { class: "ptab on" }, (isCh ? "Подписчики" : "Участники") + " · " + members.length)),
+      el("div", { style: "height:12px" }), list));
+}
+
+// --- мой профиль (редактирование) ---
+function profileView() {
+  closeChannel();
+  const err = el("p", { class: "err" });
+  const nameInput = el("input", { value: myProfile.username, maxlength: "30", placeholder: "Ник" });
+  const handleInput = el("input", { value: myProfile.handle || "", maxlength: "32", placeholder: "Юзернейм, например ivan_2024", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
+  const bioInput = el("textarea", { rows: "3", maxlength: "200", placeholder: "Расскажи о себе" }, myProfile.bio || "");
+  const fileInput = el("input", { type: "file", accept: "image/*,video/*", style: "display:none" });
+  const saveBtn = el("button", { type: "button" }, "Сохранить");
+  const cancelBtn = el("button", { class: "ghost", type: "button", onclick: profileView }, "Отмена");
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      let blob, ext = "jpg", ctype = "image/jpeg";
+      if (file.type.startsWith("video/")) {
+        if (file.size > 15 * 1024 * 1024) throw new Error("Видео больше 15 МБ");
+        const dur = await new Promise((res, rej) => {
+          const v = document.createElement("video"); v.preload = "metadata";
+          v.onloadedmetadata = () => { res(v.duration); URL.revokeObjectURL(v.src); };
+          v.onerror = () => rej(new Error("Не удалось открыть видео"));
+          v.src = URL.createObjectURL(file);
+        });
+        if (!(dur <= 10.5)) throw new Error("Видео длиннее 10 секунд");
+        blob = file; ctype = file.type || "video/mp4";
+        ext = ctype.includes("webm") ? "webm" : ctype.includes("quicktime") ? "mov" : "mp4";
+      } else blob = await resizeToSquare(file);
+      const path = `${me.id}/${Date.now()}.${ext}`;
+      const { error } = await sb.storage.from("avatars").upload(path, blob, { contentType: ctype });
+      if (error) throw error;
+      const url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      const { error: ue } = await sb.from("profiles").update({ avatar_url: url }).eq("id", me.id);
+      if (ue) throw ue;
+      myProfile.avatar_url = url;
+      profileView();
+    } catch (e) {
+      alert("Не удалось загрузить: " + e.message + (/mime|size|exceed/i.test(e.message) ? " (выполнена ли часть 7 SQL?)" : ""));
+    } finally {
+      fileInput.value = "";
+    }
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    const username = nameInput.value.trim();
+    if (username.length < 2) { err.textContent = "Ник должен быть от 2 символов"; return; }
+    const handle = normHandle(handleInput.value);
+    if (!handle && myProfile.handle) { err.textContent = "Юзернейм нельзя убрать"; return; }
+    if (handle) { const he = handleError(handle); if (he) { err.textContent = he; return; } }
+    err.textContent = "";
+    saveBtn.disabled = true;
+    const patch = { username, handle: handle || null, bio: bioInput.value.trim() || null };
+    const { error } = await sb.from("profiles").update(patch).eq("id", me.id);
+    saveBtn.disabled = false;
+    if (error) { err.textContent = error.code === "23505" ? "Этот юзернейм уже занят" : error.message; return; }
+    Object.assign(myProfile, patch);
+    profileView();
+  });
+
+  const editBox = el("div", { class: "island pad form", style: "display:none" },
+    el("p", { class: "label" }, "Ник"), nameInput,
+    el("p", { class: "label" }, "Юзернейм (по нему тебя находят, от 5 символов)"), handleInput,
+    el("p", { class: "label" }, "О себе"), bioInput,
+    err, saveBtn, cancelBtn);
+
+  const info = el("div", { class: "island" },
+    infoRow("О себе", myProfile.bio || "Пока ничего не написано"),
+    usernameRow(myProfile, true, () => edit()),
+    ...(me.email && !me.email.endsWith(HANDLE_DOMAIN) ? [infoRow("Email", me.email)] : []));
+
+  const edit = () => { info.style.display = "none"; editBox.style.display = ""; actions.style.display = "none"; };
+  const actions = el("div", { class: "actions" },
+    action("📷", "Фото или видео", () => fileInput.click()),
+    action("✏️", "Изменить", edit),
+    action("⚙️", "Настройки", settingsView));
+
+  show(
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(myProfile, "big"), el("h2", {}, nameWithBadge(myProfile, 22)),
+        el("div", { class: "sub" }, "в сети · ", el("span", { class: "stars" }, "⭐ " + wallet))),
+      actions, info, badgeFooter(myProfile), editBox,
+      giftsSection(me.id, "Подарки"),
+      el("div", { class: "center" }, el("button", { class: "okbtn sendg", type: "button", onclick: listView }, "🎁 Отправить подарки")),
+      el("div", { class: "center" }, el("button", { class: "okbtn sendg", type: "button", onclick: () => giftView(myProfile) }, "⭐ Купить подарок себе")),
+      el("div", { class: "center" }, el("button", { class: "danger", type: "button", onclick: () => sb.auth.signOut() }, "Выйти из аккаунта")),
+      fileInput),
+    tabBar("profile")
+  );
+}
+
+// юзернейм группы/канала: копировать, изменить (владелец)
+function chatHandleRow(chat, isOwner, after) {
+  const row = el("button", { class: "irow", type: "button" },
+    el("div", { class: "iv" }, chat.handle ? "@" + chat.handle : "Не задан" + (isOwner ? " — нажми «Изменить»" : "")),
+    el("div", { class: "il" }, "Имя пользователя"));
+  row.addEventListener("click", () => {
+    if (!chat.handle && !isOwner) return;
+    const close = () => back.remove();
+    const item = (icon, title, sub, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+      el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), ...(sub ? [el("small", {}, sub)] : [])));
+    const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+      el("div", { class: "sheet attach" },
+        ...(chat.handle ? [item("📋", "Скопировать", "@" + chat.handle, () => {
+          try { navigator.clipboard.writeText("@" + chat.handle); toast("Скопировано: @" + chat.handle); } catch { toast("Не удалось скопировать"); }
+        })] : []),
+        ...(isOwner ? [item("✏️", "Изменить", "Поменять юзернейм", async () => {
+          const v = prompt("Новый юзернейм (5–32 символа: a-z, цифры, _). Пусто - убрать, чат станет частным:", chat.handle || "");
+          if (v === null) return;
+          const { data, error } = await sb.rpc("set_chat_handle", { p_chat: chat.id, p_handle: normHandle(v) || null });
+          if (error) { alert(error.message); return; }
+          toast("Юзернейм обновлён");
+          after(data);
+        })] : [])));
+    document.body.append(back);
+  });
+  return row;
+}
+
+// --- профиль собеседника ---
+function peerProfileView(peer) {
+  closeChannel();
+  show(
+    el("header", { class: "bare" }, el("button", { class: "icon", onclick: () => chatView(peer) }, "←"),
+      el("button", { class: "icon", "aria-label": "Меню", onclick: () => contactMenu(peer) }, "⋮")),
+    el("div", { class: "pscroll" },
+      el("div", { class: "hero" }, avatar(peer, "big"), el("h2", {}, nameWithBadge(peer, 22))),
+      el("div", { class: "actions" },
+        action("💬", "Написать", () => chatView(peer)),
+        action("🎁", "Подарок", () => giftView(peer))),
+      el("div", { class: "island" },
+        infoRow("О себе", peer.bio || "Пока ничего не написано"),
+        ...(contacts.get(peer.id)?.custom_name ? [infoRow("Ник", peer.username)] : []),
+        usernameRow(peer, false, null)),
+      badgeFooter(peer),
+      giftsSection(peer.id, "Подарки"))
+  );
+}
+
+// --- выбор и отправка подарка ---
+function giftView(peer) {
+  closeChannel();
+  let selected = null;
+  const err = el("p", { class: "err" });
+  const comment = el("input", { placeholder: "Подпись (необязательно)", maxlength: "200" });
+  const sendBtn = el("button", { type: "button", disabled: "" }, "Выбери подарок");
+  const grid = el("div", { class: "gifts-grid" });
+
+  function updateBtn() {
+    if (!selected) { sendBtn.disabled = true; sendBtn.textContent = "Выбери подарок"; return; }
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Подарить за ⭐ " + selected.price;
+  }
+  function renderGrid() {
+    if (!catalog.length) { grid.replaceChildren(el("p", { class: "muted" }, "Подарки пока недоступны")); return; }
+    const avail = catalog.filter((g) => !g.supply || g.sold < g.supply);
+    grid.replaceChildren(...avail.map((g) =>
+      el("button", {
+        class: "gtile" + (selected === g ? " sel" : ""), type: "button",
+        onclick: () => { selected = g; renderGrid(); updateBtn(); },
+      },
+        el("span", { class: "gemoji" }, giftArt(g)),
+        el("span", {}, g.name),
+        el("span", { class: "stars" }, "⭐ " + g.price),
+        ...(g.supply ? [el("span", { class: "left" }, "осталось " + (g.supply - g.sold) + " из " + g.supply)] : []))
+    ));
+  }
+
+  sendBtn.addEventListener("click", () => {
+    if (!selected) return;
+    confirmBuy(selected, peer.id === me.id ? "себе" : "для " + (peer.title || peer.username), doSend);
+  });
+  async function doSend() {
+    err.textContent = "";
+    sendBtn.disabled = true;
+    const toChat = "kind" in peer;
+    const { error } = toChat
+      ? await sb.rpc("send_chat_gift", { p_chat: peer.id, p_gift_id: selected.id, p_comment: comment.value.trim() || null })
+      : await sb.rpc("send_gift", { p_recipient: peer.id, p_gift_id: selected.id, p_comment: comment.value.trim() || null });
+    if (error) { err.textContent = error.message; updateBtn(); return; }
+    await loadWalletAndCatalog();
+    toast("Подарок куплен · списано ⭐ " + selected.price);
+    if (peer.id === me.id) chatView(FAV()); else chatView(peer);
+  }
+
+  show(
+    el("header", {},
+      el("button", { class: "icon", onclick: () => (peer.id === me.id ? profileView() : chatView(peer)) }, "←"),
+      el("b", {}, peer.id === me.id ? "Подарок себе" : "Подарок для " + (peer.title || peer.username)),
+      el("span", { class: "stars" }, "⭐ " + wallet)),
+    el("div", { class: "profile" }, grid, comment, err, sendBtn)
+  );
+  renderGrid();
+  updateBtn();
+}
+
+// --- личный чат ---
+async function chatView(peer) {
+  closeChannel();
+  const isChat = "kind" in peer;          // группа/канал (у людей поля kind нет)
+  const isChannel = isChat && peer.kind === "channel";
+  let canPost = true;
+  if (isChat) {
+    const { data: mem } = await sb.from("chat_members").select("role").eq("chat_id", peer.id).eq("user_id", me.id).maybeSingle();
+    if (!mem) { chatInfoView(peer); return; }
+    canPost = !isChannel || mem.role === "owner" || mem.role === "admin";
+  }
+  const box = el("div", { class: "msgs" });
+  const input = el("input", { placeholder: "Сообщение", autocomplete: "off", enterkeyhint: "send" });
+  const status = el("div", { class: "sending", style: "display:none" }, "Отправка…");
+  let composer;
+  let recState = null;
+  if (canPost) {
+    const emojiBtn = svgBtn("cbtn", ICON.smile);
+    const clipBtn = svgBtn("cbtn", ICON.clip);
+    const giftBtn = peer.fav ? null : el("button", { class: "cbtn gift", type: "button", onclick: () => giftView(peer) }, "🎁");
+    const actBtn = svgBtn("sendbtn", ICON.mic);
+    const field = el("div", { class: "cfield" }, emojiBtn, input, ...(giftBtn ? [giftBtn] : []), clipBtn);
+    const bar = el("form", { class: "composer tg" }, field, actBtn);
+    const panel = el("div", { class: "emojipanel", style: "display:none" });
+    composer = el("div", { class: "cwrap" }, status, bar, panel);
+
+    const galleryInput = el("input", { type: "file", accept: "image/*,video/*", style: "display:none" });
+    const camInput = el("input", { type: "file", accept: "image/*", capture: "environment", style: "display:none" });
+    const vidInput = el("input", { type: "file", accept: "video/*", capture: "environment", style: "display:none" });
+    composer.append(galleryInput, camInput, vidInput);
+    [galleryInput, camInput, vidInput].forEach((inp) => inp.addEventListener("change", () => {
+      const f = inp.files[0]; inp.value = ""; if (f) previewAndSend(f);
+    }));
+
+    // кнопка справа: микрофон, а если есть текст - отправить
+    const refreshAct = () => setIcon(actBtn, input.value.trim() ? ICON.send : ICON.mic);
+    input.addEventListener("input", refreshAct);
+
+    // смайлики
+    let tabKey = Object.keys(EMOJI)[0];
+    function renderPanel() {
+      panel.replaceChildren(
+        el("div", { class: "etabs" }, ...Object.keys(EMOJI).map((k) =>
+          el("button", { class: "etab" + (k === tabKey ? " on" : ""), type: "button", onclick: () => { tabKey = k; renderPanel(); } }, k))),
+        el("div", { class: "egrid" }, ...EMOJI[tabKey].split(" ").map((e) =>
+          el("button", { class: "eb", type: "button", onclick: () => {
+            const a = input.selectionStart ?? input.value.length, z = input.selectionEnd ?? a;
+            input.setRangeText(e, a, z, "end");
+            refreshAct();
+          } }, e))));
+    }
+    function togglePanel(open) {
+      const show = open ?? panel.style.display === "none";
+      panel.style.display = show ? "" : "none";
+      setIcon(emojiBtn, show ? "⌨️" : ICON.smile);
+      if (show) { renderPanel(); input.blur(); } else input.focus();
+    }
+    emojiBtn.addEventListener("click", () => togglePanel());
+    input.addEventListener("focus", () => { if (panel.style.display !== "none") togglePanel(false); });
+
+    // прикрепить
+    clipBtn.addEventListener("click", () => {
+      const close = () => back.remove();
+      const item = (icon, title, sub2, fn) => el("button", { class: "mitem", type: "button", onclick: () => { close(); fn(); } },
+        el("span", { class: "mi" }, icon), el("span", {}, el("b", {}, title), el("small", {}, sub2)));
+      const back = el("div", { class: "backdrop", onclick: (e) => { if (e.target === back) close(); } },
+        el("div", { class: "sheet attach" },
+          item("🖼", "Галерея", "Фото и видео из памяти телефона", () => galleryInput.click()),
+          item("📷", "Сделать снимок", "Открыть камеру", () => camInput.click()),
+          item("🎥", "Записать видео", "Открыть камеру для видео", () => vidInput.click()),
+          ...(isChat ? [] : [item("🎁", "Подарок", "Отправить подарок за звёзды", () => giftView(peer))])));
+      document.body.append(back);
+    });
+
+    // запись голоса: нажми на микрофон, затем на стрелку - отправить, на корзину - отмена
+    const recTimer = el("span", { class: "rectime" }, "0:00");
+    const trash = svgBtn("cbtn trash", ICON.trash, { onclick: () => stopRec(false) });
+    const recUI = el("div", { class: "cfield rec" }, trash, el("span", { class: "recdot" }), recTimer,
+      el("span", { class: "rechint" }, "идёт запись…"));
+    async function startRec() {
+      if (!navigator.mediaDevices || !window.MediaRecorder) { alert("Запись голоса не поддерживается в этом браузере"); return; }
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch { alert("Нет доступа к микрофону. Разреши его для этого сайта в настройках браузера."); return; }
+      const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find((t) => MediaRecorder.isTypeSupported(t));
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks = [];
+      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      recState = { mr, chunks, stream, start: Date.now(), mime: mr.mimeType || mime || "audio/webm" };
+      recState.timer = setInterval(() => { recTimer.textContent = fmtDur((Date.now() - recState.start) / 1000); }, 250);
+      mr.start(250);
+      recTimer.textContent = "0:00";
+      setIcon(actBtn, ICON.send);
+      bar.replaceChildren(recUI, actBtn);
+    }
+    function stopRec(send) {
+      if (!recState) return;
+      const r = recState; recState = null;
+      clearInterval(r.timer);
+      const secs = Math.round((Date.now() - r.start) / 1000);
+      r.mr.onstop = async () => {
+        r.stream.getTracks().forEach((t) => t.stop());
+        if (!send) return;
+        if (secs < 1) { toast("Слишком короткое сообщение"); return; }
+        const type = (r.mr.mimeType || r.mime).split(";")[0];
+        const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+        await sendMedia(new Blob(r.chunks, { type }), "voice", ext, type, secs, "");
+      };
+      try { r.mr.stop(); } catch { r.stream.getTracks().forEach((t) => t.stop()); }
+      bar.replaceChildren(field, actBtn);
+      refreshAct();
+    }
+    actBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (recState) { stopRec(true); return; }
+      if (input.value.trim()) { sendText(); return; }
+      startRec();
+    });
+    bar.addEventListener("submit", (e) => { e.preventDefault(); if (!recState && input.value.trim()) sendText(); });
+    chatCleanup = () => { if (recState) stopRec(false); if (playingAudio) playingAudio.pause(); };
+  } else {
+    composer = el("div", { class: "readonly" }, "Писать в канале могут только администраторы");
+  }
+
+  // предпросмотр фото/видео с подписью перед отправкой
+  function previewAndSend(file) {
+    const isVideo = file.type.startsWith("video/");
+    if (!isVideo && !file.type.startsWith("image/")) { alert("Можно отправлять только фото и видео"); return; }
+    if (file.size > 50 * 1024 * 1024) { alert("Файл слишком большой (максимум 50 МБ)"); return; }
+    const url = URL.createObjectURL(file);
+    const cap = el("input", { placeholder: "Добавить подпись…", maxlength: "1000" });
+    const close = () => { back.remove(); URL.revokeObjectURL(url); };
+    const go = svgBtn("sendbtn", ICON.send, { onclick: async () => {
+      const caption = cap.value.trim();
+      close();
+      try {
+        if (isVideo) await sendMedia(file, "video", (file.name.split(".").pop() || "mp4").toLowerCase(), file.type || "video/mp4", null, caption);
+        else await sendMedia(await resizeImage(file), "image", "jpg", "image/jpeg", null, caption);
+      } catch (e) { alert("Не отправилось: " + e.message); }
+    } });
+    const back = el("div", { class: "pv" },
+      el("button", { class: "icon pvx", onclick: close }, "✕"),
+      el("div", { class: "pvm" }, isVideo ? el("video", { src: url, controls: "", playsinline: "" }) : el("img", { src: url, alt: "" })),
+      el("div", { class: "pvbar" }, el("div", { class: "cfield" }, cap), go));
+    document.body.append(back);
+  }
+
+  async function sendMedia(blob, kind, ext, contentType, duration, caption) {
+    status.style.display = ""; status.textContent = kind === "voice" ? "Отправка голосового…" : "Отправка…";
+    try {
+      const path = `${me.id}/${(crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2))}.${ext}`;
+      const { error: ue } = await sb.storage.from("media").upload(path, blob, { contentType });
+      if (ue) throw ue;
+      const url = sb.storage.from("media").getPublicUrl(path).data.publicUrl;
+      const row = { body: caption || "", media_url: url, media_type: kind, media_duration: duration,
+        ...(isChat ? { chat_id: peer.id } : { recipient_id: peer.id }) };
+      const { data: r, error } = await sb.from("messages").insert(row).select().single();
+      if (error) throw error;
+      add(r);
+    } catch (e) {
+      alert("Не отправилось: " + (/row-level security/.test(e.message) ? "аккаунт ограничен или в этот чат нельзя писать" : e.message));
+    } finally { status.style.display = "none"; }
+  }
+
+  async function sendText() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    input.dispatchEvent(new Event("input"));
+    const { data: row, error: err } = await sb.from("messages")
+      .insert(isChat ? { chat_id: peer.id, body: text } : { recipient_id: peer.id, body: text }).select().single();
+    if (err) { input.value = text; input.dispatchEvent(new Event("input")); alert(/row-level security/.test(err.message) ? "Не отправилось: аккаунт ограничен или в этот чат нельзя писать" : "Не отправилось: " + err.message); }
+    else add(row);
+  }
+  const sub = el("small", {});
+  const head = el("button", { class: "peerhead", type: "button",
+    onclick: () => (isChat ? chatInfoView(peer) : peer.fav ? profileView() : peerProfileView(peer)) },
+    avatar(isChat ? chatAsPerson(peer) : peer, "sm"),
+    isChat ? el("span", {}, el("span", { class: "ptitle" }, peer.title), sub) : el("span", {}, nameWithBadge(peer, 16)));
+  show(el("header", {}, el("button", { class: "icon", onclick: listView }, "←"), head), box, composer);
+  if (isChat) {
+    sb.from("chat_members").select("user_id", { count: "exact", head: true }).eq("chat_id", peer.id)
+      .then(({ count }) => { if (count != null) sub.textContent = membersText(peer, count); });
+  }
+
+  // имена авторов в группах
+  const profs = new Map([[me.id, myProfile]]);
+  async function ensureProfiles(ids) {
+    const need = [...new Set(ids)].filter((id) => id && !profs.has(id));
+    if (!need.length) return;
+    const { data } = await sb.from("profiles").select("id, username, handle, avatar_url, badge").in("id", need);
+    (data || []).forEach((u) => profs.set(u.id, u));
+  }
+  const colors = ["#ff7b8a", "#ffb35c", "#7bd88f", "#5cc8ff", "#b496ff", "#ff8fd0"];
+  const colorOf = (id) => colors[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length];
+
+  const seen = new Set();
+  let prev = null; // последнее сообщение: для разделителей дней и группировки
+  function dayLabel(d) {
+    const o = { day: "numeric", month: "long" };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = "numeric";
+    return d.toLocaleDateString("ru-RU", o);
+  }
+  function add(m) {
+    if (seen.has(m.id)) return;
+    seen.add(m.id);
+    const d = new Date(m.created_at);
+    const time = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    const day = d.toDateString();
+    if (!prev || prev.day !== day) box.append(el("div", { class: "daysep" }, dayLabel(d)));
+    if (m.gift_id) {
+      // подарок: системная "плашка" сверху и прозрачная карточка с подарком, как в Телеграме
+      const g = giftById[m.gift_id] || { emoji: "🎁", name: "Подарок", price: 0 };
+      const mineG = m.sender_id === me.id;
+      const cost = plural(g.price, ["звезды", "звезды", "звёзд"]);
+      const selfG = mineG && m.recipient_id === me.id;
+      const toChatG = !!m.chat_id;
+      const gSender = mineG ? myProfile : (profs.get(m.sender_id) || { username: "Кто-то" });
+      const island = el("div", { class: "sysisland" },
+        toChatG ? (mineG ? "Вы" : dispName(gSender)) + " отправил" + (mineG ? "и" : "") + " подарок чату стоимостью " + cost :
+        selfG ? "Вы отправили себе подарок стоимостью " + cost : mineG ? "Вы отправили подарок стоимостью " + cost : dispName(peer) + " отправил вам подарок стоимостью " + cost);
+      const card = el("div", { class: "giftcard" },
+        el("div", { class: "gcemoji" }, giftArt(g)),
+        el("div", { class: "gctitle" }, ...(toChatG ? [el("span", {}, "Подарок для"), avatar(chatAsPerson(peer), "sm"), el("b", {}, peer.title), el("span", {}, "от"), nameWithBadge(gSender, 15)] : selfG ? [el("span", {}, "Подарок себе")] : [el("span", {}, mineG ? "Подарок для" : "Подарок от"), avatar(peer, "sm"), nameWithBadge(peer, 15)])),
+        ...(m.body && m.body !== "Подарок" ? [el("div", { class: "gccomment" }, m.body)] : []),
+        el("div", { class: "gcsub" }, toChatG ? "Подарок отправлен в чат." : mineG && !selfG ? "Подарок появится в профиле получателя." : "Этот подарок виден в вашем профиле."),
+        el("button", { class: "gcbtn", type: "button", onclick: async () => {
+          let gq = sb.from("gifts").select("*").eq("sender_id", m.sender_id);
+          gq = m.chat_id ? gq.eq("chat_id", m.chat_id) : gq.eq("recipient_id", m.recipient_id);
+          const { data: row } = await gq.eq("gift_id", m.gift_id).eq("created_at", m.created_at).maybeSingle();
+          const info = row || { id: null, gift_id: m.gift_id, price: g.price, created_at: m.created_at, hidden: false, sender_id: m.sender_id };
+          giftSheet(info, toChatG ? gSender : mineG ? myProfile : peer, (!mineG || selfG) && !toChatG && !!row, () => {});
+        } }, "Посмотреть"));
+      box.append(island, card);
+      prev = { day, sender: "__gift", node: card };
+      box.scrollTop = box.scrollHeight;
+      return;
+    }
+    const sameGroup = prev && prev.day === day && prev.sender === m.sender_id;
+    if (sameGroup) prev.node.classList.remove("tail");
+    const cls = "msg tail " + (m.sender_id === me.id ? "mine" : "theirs") + (m.gift_id ? " gift" : "") + (m.media_type === "voice" ? " voice" : m.media_type ? " media" : "") + (sameGroup ? "" : " first");
+    let content;
+    if (m.gift_id) {
+      const g = giftById[m.gift_id] || { emoji: "🎁", name: "Подарок" };
+      content = [el("span", { class: "gemoji" }, g.emoji), el("span", { class: "gname" }, g.name)];
+      if (m.body && m.body !== "Подарок") content.push(el("span", { class: "gcomment" }, m.body));
+    } else if (m.media_type) {
+      content = [mediaNode(m)];
+      if (m.body) content.push(el("span", { class: "mcap" }, m.body));
+    } else {
+      content = [el("span", {}, m.body)];
+    }
+    if (isChat && peer.kind === "group" && m.sender_id !== me.id && !sameGroup) {
+      const u = profs.get(m.sender_id);
+      content.unshift(el("span", { class: "sname", style: "color:" + colorOf(m.sender_id) }, u ? nameWithBadge(u, 14) : "…"));
+    }
+    const node = el("div", { class: cls }, ...content, el("span", { class: "mt" }, time));
+    box.append(node);
+    prev = { day, sender: m.sender_id, node };
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // история (последние 200)
+  const q = sb.from("messages").select("*");
+  const { data, error } = await (isChat
+    ? q.eq("chat_id", peer.id)
+    : q.or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
+  ).order("created_at", { ascending: false }).limit(200);
+  if (error) { box.append(el("p", { class: "muted" }, "Ошибка: " + error.message)); return; }
+  if (isChat) await ensureProfiles(data.map((m) => m.sender_id));
+  data.reverse().forEach(add);
+  const readKey = (isChat ? "c:" : "u:") + peer.id;
+  loadLocalRead();
+  const markRead = () => {
+    saveLocalRead(readKey, Date.now() + 60000);
+    sb.rpc("mark_read", { p_key: readKey }).then(({ error }) => {
+      if (error && !markRead.warned) { markRead.warned = true; toast("Отметка о прочтении не сохраняется на сервере (запусти gifts_part5.sql)"); }
+    }, () => {});
+  };
+  markRead();
+  // дошёл до конца переписки (увидел новые) - отметка; при выходе из чата тоже
+  box.addEventListener("scroll", () => { if (box.scrollTop + box.clientHeight >= box.scrollHeight - 80) markRead(); });
+  const prevCleanup = chatCleanup;
+  chatCleanup = () => { markRead(); if (prevCleanup) prevCleanup(); };
+
+  // новые сообщения в реальном времени
+  channel = sb.channel("chat-" + me.id + "-" + peer.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (p) => {
+      const m = p.new;
+      const ok = isChat
+        ? m.chat_id === peer.id
+        : (m.sender_id === peer.id && m.recipient_id === me.id) || (m.sender_id === me.id && m.recipient_id === peer.id);
+      if (!ok) return;
+      if (isChat) await ensureProfiles([m.sender_id]);
+      add(m);
+      if (m.sender_id !== me.id) markRead();
+    })
+    .subscribe();
+
+  if (canPost) input.focus();
+}
+
+// --- запуск: показываем нужный экран по состоянию входа ---
+let currentUid;
+sb.auth.onAuthStateChange((_event, session) => {
+  const uid = session?.user?.id ?? null;
+  if (uid === currentUid) return; // обновление токена не должно сбрасывать экран
+  currentUid = uid;
+  me = session?.user ?? null;
+  if (!uid) { myProfile = null; authView(); return; }
+  setTimeout(async () => { await loadMyProfile(); if (isRestricted(myProfile)) { lockedView(); return; } await Promise.all([loadWalletAndCatalog(), loadContacts()]); listView(); }, 0);
+});
+
+// вернулись в приложение (из фона/после перезапуска) - обновить список чатов
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && refreshList) refreshList(); });
+window.addEventListener("focus", () => { if (refreshList) refreshList(); });
+window.addEventListener("pageshow", () => { if (refreshList) refreshList(); });
+
+// режим приложения: регистрируем service worker (нужен для установки на телефон)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
